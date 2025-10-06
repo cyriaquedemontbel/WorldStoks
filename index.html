@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SkyBet Weather Betting</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.1.1/",
+    "react": "https://aistudiocdn.com/react@^19.1.1",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.19.0",
+    "react-dom/client": "https://aistudiocdn.com/react-dom@^19.1.1/client",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/"
+  }
+}
+</script>
+    
+    <style type="text/tailwindcss">
+      @layer base {
+        :root {
+          --background: 255 255 255; /* white */
+          --background-dark: 15 23 42; /* slate-900 */
+          
+          --surface: 248 250 252; /* slate-50 */
+          --surface-dark: 30 41 59; /* slate-800 */
+          
+          --text-primary: 15 23 42; /* slate-900 */
+          --text-primary-dark: 241 245 249; /* slate-100 */
+          
+          --text-secondary: 100 116 139; /* slate-500 */
+          --text-secondary-dark: 148 163 184; /* slate-400 */
+          
+          --border-color: 226 232 240; /* slate-200 */
+          --border-color-dark: 51 65 85; /* slate-700 */
+          
+          --primary: 14 165 233; /* sky-500 */
+          --primary-dark: 56 189 248; /* sky-400 */
+          
+          --primary-hover: 2 132 199; /* sky-600 */
+        }
+        
+        body {
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+        }
+      }
+    </style>
+
+    <script>
+      // Gère le mode sombre en se basant sur les préférences de l'utilisateur dans la page des paramètres
+      // Ce script est placé dans l'en-tête pour éviter un flash de contenu non stylé (FOUC).
+      const updateDarkMode = () => {
+        if (document.documentElement.classList.contains('dark')) {
+          // ne rien faire, la classe est déjà définie
+        } else {
+            // Au chargement de la page ou lors du changement de thème, il est préférable d'ajouter ceci en ligne dans <head> pour éviter un FOUC
+            if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark')
+            }
+        }
+      }
+      updateDarkMode();
+
+
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              'background': 'rgb(var(--background) / <alpha-value>)',
+              'background-dark': 'rgb(var(--background-dark) / <alpha-value>)',
+              'surface': 'rgb(var(--surface) / <alpha-value>)',
+              'surface-dark': 'rgb(var(--surface-dark) / <alpha-value>)',
+              'text-primary': {
+                DEFAULT: 'rgb(var(--text-primary) / <alpha-value>)',
+                dark: 'rgb(var(--text-primary-dark) / <alpha-value>)'
+              },
+              'text-secondary': {
+                DEFAULT: 'rgb(var(--text-secondary) / <alpha-value>)',
+                dark: 'rgb(var(--text-secondary-dark) / <alpha-value>)'
+              },
+              'border-color': {
+                DEFAULT: 'rgb(var(--border-color) / <alpha-value>)',
+                dark: 'rgb(var(--border-color-dark) / <alpha-value>)'
+              },
+              primary: {
+                DEFAULT: 'rgb(var(--primary) / <alpha-value>)',
+                dark: 'rgb(var(--primary-dark) / <alpha-value>)',
+                hover: 'rgb(var(--primary-hover) / <alpha-value>)',
+              },
+            },
+            fontFamily: {
+              sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', '"Helvetica Neue"', 'Arial', '"Noto Sans"', 'sans-serif', '"Apple Color Emoji"', '"Segoe UI Emoji"', '"Segoe UI Symbol"', '"Noto Color Emoji"'],
+            },
+            keyframes: {
+              'fade-in': {
+                '0%': { opacity: '0' },
+                '100%': { opacity: '1' },
+              },
+               'fade-in-fast': {
+                '0%': { opacity: '0' },
+                '100%': { opacity: '1' },
+              },
+            },
+            animation: {
+              'fade-in': 'fade-in 0.5s ease-in-out forwards',
+              'fade-in-fast': 'fade-in 0.2s ease-in-out forwards',
+            }
+          }
+        }
+      }
+    </script>
+  <link rel="stylesheet" href="/index.css">
+</head>
+  <body class="bg-background dark:bg-background-dark">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
