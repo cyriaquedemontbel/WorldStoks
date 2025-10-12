@@ -1,92 +1,160 @@
-const express = require('express');
-// const mongoose = require('mongoose');
-const Country = require('../models/Country');
-const User = require('../models/User');
-
+const express = require('express'); 
 const router = express.Router();
+const auth = require('../middleware/auth');
+const Stock = require('../models/Stock');
+const Portfolio = require('../models/Portfolio');
+const Transaction = require('../models/Transaction');
 
-// Helper: apply price change based on quantity
-function applyPriceChange(currentPrice, quantityDelta) {
-    // 1 action = +/- 0.1 EUR on price
-    return Number((currentPrice + 0.1 * quantityDelta).toFixed(3));
-}
+// ==============================
+// ACHAT D’ACTIONS
+// ==============================
+router.post('/buy', auth, async (req, res) => {
+  try {
+    const { ticker, quantity: rawQuantity } = req.body;
+    const quantity = Number(rawQuantity);
 
-// POST /api/trades/buy { userId, countryCode, quantity }
-router.post('/buy', async (req, res) => {
-	try {
-		const { userId, countryCode } = req.body;
-		const quantity = Number(req.body.quantity);
-		if (!userId || !countryCode || !quantity || quantity < 1) {
-			return res.status(400).json({ message: 'Invalid payload' });
-		}
+    if (!quantity || quantity <= 0) return res.status(400).json({ message: 'Quantité invalide' });
+    if (!req.user) return res.status(401).json({ message: 'Utilisateur non authentifié' });
 
-		const [user, country] = await Promise.all([
-			User.findById(userId),
-			Country.findOne({ code: countryCode.toUpperCase() }),
-		]);
-		if (!user || !country) return res.status(404).json({ message: 'User or country not found' });
+    const stock = await Stock.findOne({ ticker });
+    if (!stock) return res.status(404).json({ message: 'Stock non trouvé' });
 
-		const costEur = Number((quantity * country.price).toFixed(2));
-		if (user.cashBalanceEur < costEur) return res.status(400).json({ message: 'Insufficient balance', need: costEur, have: user.cashBalanceEur });
+    stock.circulatingSupply = stock.circulatingSupply ?? 0;
+    stock.volumeToday = stock.volumeToday ?? 0;
+    stock.turnoverToday = stock.turnoverToday ?? 0;
 
-		user.cashBalanceEur = Number((user.cashBalanceEur - costEur).toFixed(2));
-		const holding = user.holdings.find(h => h.country.toString() === country._id.toString());
-		if (holding) holding.quantity += quantity;
-		else user.holdings.push({ country: country._id, quantity });
-		user.transactions.push({ type: 'BUY', country: country._id, quantity, priceAtExecution: country.price });
-		await user.save();
+    if (stock.circulatingSupply < quantity) return res.status(400).json({ message: 'Pas assez d’actions disponibles' });
 
-		country.price = applyPriceChange(country.price, quantity);
-		country.volume += quantity;
-		country.priceHistory.push({ t: new Date(), p: country.price });
-		await country.save();
+    const total = stock.price * quantity;
+    if (req.user.cash < total) return res.status(400).json({ message: 'Fonds insuffisants' });
 
-		return res.json({ success: true, country, user });
-	} catch (error) {
-		console.error('Trade buy error:', error);
-		return res.status(500).json({ message: 'Trade failed', error: error.message });
-	}
+    // Débiter l’utilisateur
+    req.user.cash -= total;
+
+    // Mettre à jour le portefeuille
+    let portfolio = await Portfolio.findOne({ user: req.user._id, stock: stock._id });
+    if (!portfolio) {
+      portfolio = new Portfolio({ user: req.user._id, stock: stock._id, quantity });
+    } else {
+      portfolio.quantity += quantity;
+    }
+
+    // Mettre à jour le stock
+    stock.circulatingSupply -= quantity;
+    stock.volumeToday += quantity;
+    stock.turnoverToday += total;
+
+    const priceIncreaseFactor = 0.01 * (quantity / (stock.circulatingSupply + quantity));
+    stock.price = Math.max(stock.price * (1 + priceIncreaseFactor), 0.01);
+
+    await Promise.all([req.user.save(), portfolio.save(), stock.save()]);
+
+    const transaction = new Transaction({
+      user: req.user._id,
+      stock: stock._id,
+      name: stock.name,
+      ticker: stock.ticker,
+      type: 'buy',
+      quantity,
+      pricePerShare: stock.price,
+      totalValue: total,
+      timestamp: new Date(),
+    });
+    await transaction.save();
+
+    // Construire portfolio pour le frontend
+    const userPortfolio = await Portfolio.find({ user: req.user._id }).populate('stock');
+    const portfolioObject = {};
+    userPortfolio.forEach(p => {
+      portfolioObject[p.stock.ticker] = p.quantity;
+    });
+
+    res.json({ success: true, user: req.user, portfolio: portfolioObject, stock, transaction });
+  } catch (err) {
+    console.error('Erreur achat action:', err);
+    res.status(500).json({ message: 'Impossible d’acheter l’action' });
+  }
 });
 
-// POST /api/trades/sell { userId, countryCode, quantity }
-router.post('/sell', async (req, res) => {
-	try {
-		const { userId, countryCode } = req.body;
-		const quantity = Number(req.body.quantity);
-		if (!userId || !countryCode || !quantity || quantity < 1) {
-			return res.status(400).json({ message: 'Invalid payload' });
-		}
+// ==============================
+// VENTE D’ACTIONS
+// ==============================
+router.post('/sell', auth, async (req, res) => {
+  try {
+    const { ticker, quantity: rawQuantity } = req.body;
+    const quantity = Number(rawQuantity);
 
-		const [user, country] = await Promise.all([
-			User.findById(userId),
-			Country.findOne({ code: countryCode.toUpperCase() }),
-		]);
-		if (!user || !country) return res.status(404).json({ message: 'User or country not found' });
+    if (!quantity || quantity <= 0) 
+      return res.status(400).json({ message: 'Quantité invalide' });
+    if (!req.user) 
+      return res.status(401).json({ message: 'Utilisateur non authentifié' });
 
-		const holding = user.holdings.find(h => h.country.toString() === country._id.toString());
-		if (!holding || holding.quantity < quantity) return res.status(400).json({ message: 'Insufficient holdings' });
+    const stock = await Stock.findOne({ ticker });
+    if (!stock) 
+      return res.status(404).json({ message: 'Stock non trouvé' });
 
-		const proceedsEur = Number((quantity * country.price).toFixed(2));
-		user.cashBalanceEur = Number((user.cashBalanceEur + proceedsEur).toFixed(2));
-		holding.quantity -= quantity;
-		if (holding.quantity === 0) {
-			user.holdings = user.holdings.filter(h => h.country.toString() !== country._id.toString());
-		}
-		user.transactions.push({ type: 'SELL', country: country._id, quantity, priceAtExecution: country.price });
-		await user.save();
+    const portfolio = await Portfolio.findOne({ user: req.user._id, stock: stock._id });
+    if (!portfolio || portfolio.quantity < quantity) 
+      return res.status(400).json({ message: 'Quantité insuffisante' });
 
-		country.price = applyPriceChange(country.price, -quantity);
-		country.volume += quantity;
-		country.priceHistory.push({ t: new Date(), p: country.price });
-		await country.save();
+    const total = stock.price * quantity;
 
-		return res.json({ success: true, country, user });
-	} catch (error) {
-		console.error('Trade sell error:', error);
-		return res.status(500).json({ message: 'Trade failed', error: error.message });
-	}
+    // Mettre à jour le portefeuille
+    portfolio.quantity -= quantity;
+
+    if (portfolio.quantity <= 0) {
+      // 🔹 Utilisation de deleteOne() au lieu de remove() pour plus de sécurité
+      await portfolio.deleteOne();
+    } else {
+      await portfolio.save();
+    }
+
+    // Ajouter les fonds à l'utilisateur
+    req.user.cash += total;
+    await req.user.save();
+
+    // Mettre à jour le stock
+    stock.circulatingSupply += quantity;
+    stock.volumeToday += quantity;
+    stock.turnoverToday += total;
+
+    // 🔹 Calcul du prix sécurisé pour éviter division par zéro
+    let priceDecreaseFactor = 0;
+    if (stock.circulatingSupply > 0) {
+      priceDecreaseFactor = 0.01 * (quantity / stock.circulatingSupply);
+    }
+
+    stock.price = Math.max(stock.price * (1 - priceDecreaseFactor), 0.01);
+
+    await stock.save();
+
+    const transaction = new Transaction({
+      user: req.user._id,
+      stock: stock._id,
+      name: stock.name,
+      ticker: stock.ticker,
+      type: 'sell',
+      quantity,
+      pricePerShare: stock.price,
+      totalValue: total,
+      timestamp: new Date(),
+    });
+    await transaction.save();
+
+    // Construire portfolio pour le frontend
+    const userPortfolio = await Portfolio.find({ user: req.user._id }).populate('stock');
+    const portfolioObject = {};
+    userPortfolio.forEach(p => {
+      portfolioObject[p.stock.ticker] = p.quantity;
+    });
+
+    res.json({ success: true, user: req.user, portfolio: portfolioObject, stock, transaction });
+
+  } catch (err) {
+    console.error('Erreur vente action:', err);
+    res.status(500).json({ message: 'Impossible de vendre l’action' });
+  }
 });
+
 
 module.exports = router;
-
-

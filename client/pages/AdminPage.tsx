@@ -4,7 +4,6 @@ import { StockForm } from '../components/StockForm';
 
 interface AdminPageProps {
     stocks: Stock[];
-    // Fix: Updated prop types to expect a Promise<boolean> for async operations.
     onAddStock: (stock: Stock) => Promise<boolean>;
     onUpdateStock: (stock: Stock) => Promise<boolean>;
     onDeleteStock: (ticker: string) => void;
@@ -13,7 +12,6 @@ interface AdminPageProps {
 export const AdminPage = ({ stocks, onAddStock, onUpdateStock, onDeleteStock }: AdminPageProps) => {
     const [editingStock, setEditingStock] = useState<Stock | 'new' | null>(null);
 
-    // Fix: Converted handleSaveStock to an async function to correctly handle promises.
     const handleSaveStock = async (stock: Stock): Promise<boolean> => {
         let success = false;
         if (editingStock === 'new') {
@@ -21,7 +19,7 @@ export const AdminPage = ({ stocks, onAddStock, onUpdateStock, onDeleteStock }: 
         } else {
             success = await onUpdateStock(stock);
         }
-        
+
         if (success) {
             setEditingStock(null);
         }
@@ -31,7 +29,7 @@ export const AdminPage = ({ stocks, onAddStock, onUpdateStock, onDeleteStock }: 
     if (editingStock) {
         return (
             <div className="admin-page">
-                <StockForm 
+                <StockForm
                     initialData={editingStock === 'new' ? undefined : editingStock}
                     onSubmit={handleSaveStock}
                     onCancel={() => setEditingStock(null)}
@@ -48,7 +46,7 @@ export const AdminPage = ({ stocks, onAddStock, onUpdateStock, onDeleteStock }: 
                     Ajouter un nouveau marché
                 </button>
             </header>
-            
+
             <div className="admin-table-container">
                 <table className="admin-table">
                     <thead>
@@ -66,13 +64,17 @@ export const AdminPage = ({ stocks, onAddStock, onUpdateStock, onDeleteStock }: 
                             <tr key={stock.ticker}>
                                 <td>{stock.ticker}</td>
                                 <td>{stock.name}</td>
-                                <td>{stock.price.toLocaleString('fr-FR', { style: 'currency', currency: 'USD' })}</td>
-                                <td>{stock.circulatingSupply.toLocaleString('fr-FR')}</td>
-                                <td>{stock.maxSupply.toLocaleString('fr-FR')}</td>
+                                <td>{(stock.price ?? 0).toLocaleString('fr-FR', { style: 'currency', currency: 'USD' })}</td>
+                                <td>{(stock.circulatingSupply ?? 0).toLocaleString('fr-FR')}</td>
+                                <td>{(stock.maxSupply ?? 0).toLocaleString('fr-FR')}</td>
                                 <td>
                                     <div className="admin-table__actions">
-                                        <button className="btn btn--edit" onClick={() => setEditingStock(stock)}>Modifier</button>
-                                        <button className="btn btn--delete" onClick={() => onDeleteStock(stock.ticker)}>Supprimer</button>
+                                        <button className="btn btn--edit" onClick={() => setEditingStock(stock)}>
+                                            Modifier
+                                        </button>
+                                        <button className="btn btn--delete" onClick={() => onDeleteStock(stock.ticker)}>
+                                            Supprimer
+                                        </button>
                                     </div>
                                 </td>
                             </tr>

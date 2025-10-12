@@ -17,7 +17,6 @@ const TIMEFRAME_DAYS: Record<Timeframe, number> = {
 
 const Tooltip = ({ data }: { data: { point: ChartPoint, clientX: number, clientY: number } | null }) => {
     if (!data) return null;
-    
     const { point, clientX, clientY } = data;
     const formattedPrice = point.price.toLocaleString('fr-FR', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const formattedDate = point.date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -35,12 +34,16 @@ export const StockChart = ({ stock }: { stock: Stock }) => {
     const [hoveredData, setHoveredData] = useState<{ point: ChartPoint, svgX: number, svgY: number, clientX: number, clientY: number } | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 
-    const { change, history } = stock;
+    const change = stock.change ?? 0;
+    const history = stock.history ?? []; // <- valeur par défaut pour éviter les erreurs
+
     const isPositive = change >= 0;
     const color = isPositive ? 'var(--positive-change)' : 'var(--negative-change)';
     const gradientId = `chartGradient-${stock.ticker}-${timeframe}`;
 
     const dataPoints = useMemo(() => {
+        if (!history || history.length === 0) return [];
+
         const now = new Date();
         const daysToFilter = TIMEFRAME_DAYS[timeframe];
         const startDate = new Date();
@@ -49,15 +52,18 @@ export const StockChart = ({ stock }: { stock: Stock }) => {
         }
 
         const filteredHistory = isFinite(daysToFilter)
-            ? history.filter(point => point.date >= startDate.getTime())
+            ? history.filter(point => point?.date >= startDate.getTime())
             : history;
 
-        return filteredHistory.map(p => ({ date: new Date(p.date), price: p.price }));
+        return filteredHistory.map(p => ({
+            date: new Date(p.date ?? now.getTime()), // sécurisation
+            price: p.price ?? 0
+        }));
 
     }, [history, timeframe]);
 
     const { pathData, areaPathData, maxValue, minValue } = useMemo(() => {
-        if(dataPoints.length < 2) return { pathData: 'M 0,50 L 100,50', areaPathData: 'M 0,50 L 100,50 V 100 H 0 Z', maxValue: 0, minValue: 0 };
+        if (dataPoints.length < 2) return { pathData: 'M 0,50 L 100,50', areaPathData: 'M 0,50 L 100,50 V 100 H 0 Z', maxValue: 0, minValue: 0 };
 
         const max = Math.max(...dataPoints.map(p => p.price));
         const min = Math.min(...dataPoints.map(p => p.price));
@@ -65,13 +71,11 @@ export const StockChart = ({ stock }: { stock: Stock }) => {
 
         const buildPath = (points: ChartPoint[]) => {
             if (range === 0) return `M 0,50 L 100,50`;
-            return points
-                .map((p, i) => {
-                    const x = (i / (points.length - 1)) * 100;
-                    const y = 100 - ((p.price - min) / range) * 90 - 5;
-                    return `${i === 0 ? 'M' : 'L'} ${x.toFixed(2)},${y.toFixed(2)}`;
-                })
-                .join(' ');
+            return points.map((p, i) => {
+                const x = (i / (points.length - 1)) * 100;
+                const y = 100 - ((p.price - min) / range) * 90 - 5;
+                return `${i === 0 ? 'M' : 'L'} ${x.toFixed(2)},${y.toFixed(2)}`;
+            }).join(' ');
         };
 
         const path = buildPath(dataPoints);
@@ -80,19 +84,19 @@ export const StockChart = ({ stock }: { stock: Stock }) => {
 
     const handleMouseMove = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
         if (!containerRef.current || dataPoints.length === 0) return;
-        
+
         const rect = containerRef.current.getBoundingClientRect();
         const offsetX = event.clientX - rect.left;
         const width = rect.width;
-        
+
         const index = Math.min(
             dataPoints.length - 1,
             Math.max(0, Math.round((offsetX / width) * (dataPoints.length - 1)))
         );
-        
+
         const point = dataPoints[index];
         const range = maxValue - minValue;
-        
+
         const svgX = (index / (dataPoints.length - 1)) * 100;
         const svgY = range === 0 ? 50 : 100 - ((point.price - minValue) / range) * 90 - 5;
 
@@ -102,6 +106,10 @@ export const StockChart = ({ stock }: { stock: Stock }) => {
     const handleMouseLeave = useCallback(() => {
         setHoveredData(null);
     }, []);
+
+    if (dataPoints.length === 0) {
+        return <p>Aucune donnée historique disponible pour {stock.ticker}.</p>;
+    }
 
     return (
         <div className="stock-chart-container" ref={containerRef} onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>

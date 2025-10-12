@@ -26,16 +26,27 @@ export const HistoryPage = ({ history }: HistoryPageProps) => {
                             </tr>
                         </thead>
                         <tbody>
-                            {sortedHistory.map(tx => (
-                                <tr key={tx.id} className={tx.type === 'buy' ? 'transaction--buy' : 'transaction--sell'}>
-                                    <td>{new Date(tx.timestamp).toLocaleString('fr-FR')}</td>
-                                    <td className="transaction-type">{tx.type === 'buy' ? 'Achat' : 'Vente'}</td>
-                                    <td className="transaction-asset">{tx.name} ({tx.ticker})</td>
-                                    <td>{tx.quantity.toLocaleString('fr-FR')}</td>
-                                    <td>{tx.pricePerShare.toLocaleString('fr-FR', { style: 'currency', currency: 'USD' })}</td>
-                                    <td>{tx.totalValue.toLocaleString('fr-FR', { style: 'currency', currency: 'USD' })}</td>
-                                </tr>
-                            ))}
+                            {sortedHistory.map(tx => {
+                                const timestamp = tx.timestamp ? new Date(tx.timestamp).toLocaleString('fr-FR') : '-';
+                                const quantity = tx.quantity ?? 0;
+                                const pricePerShare = tx.pricePerShare ?? 0;
+                                const totalValue = tx.totalValue ?? quantity * pricePerShare;
+                                const typeLabel = tx.type === 'buy' ? 'Achat' : 'Vente';
+                                const rowClass = tx.type === 'buy' ? 'transaction--buy' : 'transaction--sell';
+                                const name = tx.name ?? '-';
+                                const ticker = tx.ticker ?? '-';
+
+                                return (
+                                    <tr key={tx.id ?? Math.random().toString(36).substr(2, 9)} className={rowClass}>
+                                        <td>{timestamp}</td>
+                                        <td className="transaction-type">{typeLabel}</td>
+                                        <td className="transaction-asset">{name} ({ticker})</td>
+                                        <td>{quantity.toLocaleString('fr-FR')}</td>
+                                        <td>{pricePerShare.toLocaleString('fr-FR', { style: 'currency', currency: 'USD' })}</td>
+                                        <td>{totalValue.toLocaleString('fr-FR', { style: 'currency', currency: 'USD' })}</td>
+                                    </tr>
+                                );
+                            })}
                         </tbody>
                     </table>
                 </div>

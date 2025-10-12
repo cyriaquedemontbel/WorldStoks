@@ -2,7 +2,7 @@ import React, { useState, useMemo, useRef, useCallback } from 'react';
 import { User, Stock } from '../types';
 
 interface ChartPoint {
-    date: Date;
+    date: number;
     price: number;
 }
 
@@ -17,11 +17,9 @@ const TIMEFRAME_DAYS: Record<Timeframe, number> = {
 
 const Tooltip = ({ data }: { data: { point: ChartPoint, clientX: number, clientY: number } | null }) => {
     if (!data) return null;
-    
     const { point, clientX, clientY } = data;
-    const formattedPrice = point.price.toLocaleString('fr-FR', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    const formattedDate = point.date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
-
+    const formattedPrice = point.price.toLocaleString('fr-FR', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 });
+    const formattedDate = new Date(point.date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
     return (
         <div className="chart-tooltip" style={{ left: clientX, top: clientY }}>
             <div className="chart-tooltip__price">{formattedPrice}</div>
@@ -30,113 +28,81 @@ const Tooltip = ({ data }: { data: { point: ChartPoint, clientX: number, clientY
     );
 };
 
-export const PortfolioChart = ({ user, stocks }: { user: User, stocks: Stock[] }) => {
+interface PortfolioChartProps {
+    user: User | null;
+    stocks: Stock[];
+}
+
+export const PortfolioChart = ({ user, stocks }: PortfolioChartProps) => {
     const [timeframe, setTimeframe] = useState<Timeframe>('1M');
     const [hoveredData, setHoveredData] = useState<{ point: ChartPoint, svgX: number, svgY: number, clientX: number, clientY: number } | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
+
     const color = 'var(--primary)';
     const gradientId = `portfolioChartGradient-${timeframe}`;
 
     const dataPoints = useMemo(() => {
+        if (!user?.portfolio || !stocks.length) return [];
+
         const daysToFilter = TIMEFRAME_DAYS[timeframe];
-        
-        const userHoldings = Object.entries(user.portfolio)
-            .map(([ticker, quantity]) => {
+        const now = Date.now();
+        const startDate = isFinite(daysToFilter) ? now - daysToFilter * 24 * 60 * 60 * 1000 : 0;
+
+        const holdings = Object.entries(user.portfolio)
+            .map(([ticker, { quantity }]) => {
+                if (quantity <= 0) return null;
                 const stockData = stocks.find(s => s.ticker === ticker);
-                return (stockData && quantity > 0) ? { ...stockData, quantity } : null;
+                if (!stockData || !stockData.history?.length) return null;
+                const filteredHistory = isFinite(daysToFilter)
+                    ? stockData.history.filter(p => p.date >= startDate)
+                    : stockData.history;
+                return { ...stockData, quantity, history: filteredHistory };
             })
-            .filter((holding): holding is (Stock & { quantity: number }) => holding !== null);
-            
-        if (userHoldings.length === 0) return [];
+            .filter((h): h is Stock & { quantity: number; history: ChartPoint[] } => h !== null && h.history.length > 0);
 
-        const now = new Date();
-        const startDate = new Date();
-         if (isFinite(daysToFilter)) {
-            startDate.setDate(now.getDate() - daysToFilter);
-        }
+        if (!holdings.length) return [];
 
-        const allHistories = userHoldings.map(holding => ({
-            quantity: holding.quantity,
-            history: isFinite(daysToFilter)
-                ? holding.history.filter(point => point.date >= startDate.getTime())
-                : holding.history
-        }));
-
-        if (allHistories.some(h => h.history.length === 0)) return [];
-        
-        // Use the first stock's timeline as the reference
-        const referenceHistory = allHistories[0].history;
-        
-        const portfolioHistory: ChartPoint[] = referenceHistory.map((refPoint, index) => {
-            let totalValue = 0;
-            
-            allHistories.forEach(h => {
-                // Find the closest point in time, or assume synchronized histories
-                // For this simulation, we'll assume synchronized indices is good enough.
+        const referenceHistory = holdings[0].history;
+        return referenceHistory.map((refPoint, index) => {
+            const totalValue = holdings.reduce((sum, h) => {
                 const point = h.history[index];
-                if (point) {
-                    totalValue += point.price * h.quantity;
-                }
-            });
-
-            return { date: new Date(refPoint.date), price: totalValue };
+                return sum + (point?.price ?? 0) * h.quantity;
+            }, 0);
+            return { date: refPoint.date, price: totalValue };
         });
-        
-        return portfolioHistory;
-
-    }, [user.portfolio, stocks, timeframe]);
+    }, [user, stocks, timeframe]);
 
     const { pathData, areaPathData, maxValue, minValue } = useMemo(() => {
         if (dataPoints.length < 2) return { pathData: 'M 0,50 L 100,50', areaPathData: 'M 0,50 L 100,50 V 100 H 0 Z', maxValue: 0, minValue: 0 };
-        
         const max = Math.max(...dataPoints.map(p => p.price));
         const min = Math.min(...dataPoints.map(p => p.price));
-        const range = max - min;
-        
-        const buildPath = (points: ChartPoint[]) => {
-            if (range === 0) return `M 0,50 L 100,50`;
-            return points
-                .map((p, i) => {
-                    const x = (i / (points.length - 1)) * 100;
-                    const y = 100 - ((p.price - min) / range) * 90 - 5;
-                    return `${i === 0 ? 'M' : 'L'} ${x.toFixed(2)},${y.toFixed(2)}`;
-                })
-                .join(' ');
-        };
+        const range = max - min || 1;
 
-        const path = buildPath(dataPoints);
+        const path = dataPoints.map((p, i) => {
+            const x = (i / (dataPoints.length - 1)) * 100;
+            const y = 100 - ((p.price - min) / range) * 90 - 5;
+            return `${i === 0 ? 'M' : 'L'} ${x.toFixed(2)},${y.toFixed(2)}`;
+        }).join(' ');
+
         return { pathData: path, areaPathData: `${path} V 100 H 0 Z`, maxValue: max, minValue: min };
     }, [dataPoints]);
 
     const handleMouseMove = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
         if (!containerRef.current || dataPoints.length === 0) return;
-        
         const rect = containerRef.current.getBoundingClientRect();
         const offsetX = event.clientX - rect.left;
-        const width = rect.width;
-        
-        const index = Math.min(
-            dataPoints.length - 1,
-            Math.max(0, Math.round((offsetX / width) * (dataPoints.length - 1)))
-        );
-        
+        const index = Math.min(dataPoints.length - 1, Math.max(0, Math.round((offsetX / rect.width) * (dataPoints.length - 1))));
         const point = dataPoints[index];
-        const range = maxValue - minValue;
-        
+        const range = maxValue - minValue || 1;
         const svgX = (index / (dataPoints.length - 1)) * 100;
-        const svgY = range === 0 ? 50 : 100 - ((point.price - minValue) / range) * 90 - 5;
-
+        const svgY = 100 - ((point.price - minValue) / range) * 90 - 5;
         setHoveredData({ point, svgX, svgY, clientX: event.clientX, clientY: event.clientY });
     }, [dataPoints, maxValue, minValue]);
 
-    const handleMouseLeave = useCallback(() => {
-        setHoveredData(null);
-    }, []);
+    const handleMouseLeave = useCallback(() => setHoveredData(null), []);
 
-    const userHasHoldings = Object.values(user.portfolio).some(qty => qty > 0);
-    if (!userHasHoldings) {
-        return null; // Don't render the chart if the portfolio is empty
-    }
+    const userHasHoldings = !!user?.portfolio && Object.values(user.portfolio).some(p => p.quantity > 0);
+    if (!userHasHoldings) return <p>Aucune action détenue pour afficher le graphique.</p>;
 
     return (
         <div className="portfolio-chart-container">
@@ -152,20 +118,18 @@ export const PortfolioChart = ({ user, stocks }: { user: User, stocks: Stock[] }
                             </linearGradient>
                         </defs>
                         <path d={areaPathData} fill={`url(#${gradientId})`} stroke="none" />
-                        <path d={pathData} fill="none" stroke={color} strokeWidth="0.5" strokeLinejoin="round" strokeLinecap="round" />
+                        <path d={pathData} fill="none" stroke={color} strokeWidth={0.5} strokeLinejoin="round" strokeLinecap="round" />
                         {hoveredData && (
                             <>
-                                <line x1={hoveredData.svgX} y1="0" x2={hoveredData.svgX} y2="100" stroke={color} strokeWidth="0.2" strokeDasharray="2 2" />
-                                <circle cx={hoveredData.svgX} cy={hoveredData.svgY} r="1.5" fill={color} stroke="var(--background-dark)" strokeWidth="0.5" />
+                                <line x1={hoveredData.svgX} y1="0" x2={hoveredData.svgX} y2="100" stroke={color} strokeWidth={0.2} strokeDasharray="2 2" />
+                                <circle cx={hoveredData.svgX} cy={hoveredData.svgY} r={1.5} fill={color} stroke="var(--background-dark)" strokeWidth={0.5} />
                             </>
                         )}
                     </svg>
                 </div>
                 <div className="chart-timeframes">
-                    {(['1S', '1M', '1A', 'Max'] as Timeframe[]).map(tf => (
-                        <button key={tf} onClick={() => setTimeframe(tf)} className={timeframe === tf ? 'active' : ''}>
-                            {tf}
-                        </button>
+                    {(['1S','1M','1A','Max'] as Timeframe[]).map(tf => (
+                        <button key={tf} onClick={() => setTimeframe(tf)} className={timeframe === tf ? 'active' : ''}>{tf}</button>
                     ))}
                 </div>
             </div>

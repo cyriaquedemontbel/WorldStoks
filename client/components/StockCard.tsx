@@ -1,5 +1,5 @@
 import React from 'react';
-import { Stock, Page, User } from '../types';
+import { Stock, User, Page } from '../types';
 import { ChangeIcon } from './ChangeIcon';
 
 interface StockCardProps {
@@ -11,11 +11,15 @@ interface StockCardProps {
 }
 
 export const StockCard = ({ stock, user, onStockSelect, onNavigate, onOpenTradeModal }: StockCardProps) => {
-    const isPositive = stock.change >= 0;
+    const price = stock.price || 0;
+    const change = stock.change || 0;
+    const changePercent = stock.changePercent || 0;
+    const isPositive = change >= 0;
+
     const changeClass = isPositive ? 'stock-card__change--positive' : 'stock-card__change--negative';
-    const formattedPrice = stock.price.toLocaleString('fr-FR', { style: 'currency', currency: 'USD' });
-    const formattedChange = `${isPositive ? '+' : ''}${stock.change.toFixed(2)}`;
-    const formattedChangePercent = `${isPositive ? '+' : ''}${stock.changePercent.toFixed(2)}%`;
+    const formattedPrice = price.toLocaleString('fr-FR', { style: 'currency', currency: 'USD' });
+    const formattedChange = `${isPositive ? '+' : ''}${change.toFixed(2)}`;
+    const formattedChangePercent = `${isPositive ? '+' : ''}${changePercent.toFixed(2)}%`;
 
     const handleAction = (e: React.MouseEvent, type: 'buy' | 'sell') => {
         e.stopPropagation();
@@ -26,7 +30,8 @@ export const StockCard = ({ stock, user, onStockSelect, onNavigate, onOpenTradeM
         }
     };
 
-    const userShares = user.portfolio[stock.ticker] || 0;
+    // Accès direct à la valeur numérique du portefeuille
+    const userShares = user.portfolio?.[stock.ticker] || 0;
 
     return (
         <article 
@@ -46,7 +51,7 @@ export const StockCard = ({ stock, user, onStockSelect, onNavigate, onOpenTradeM
             <div className="stock-card__price-info">
                 <p className="stock-card__price">{formattedPrice}</p>
                 <div className={`stock-card__change ${changeClass}`}>
-                    <ChangeIcon change={stock.change} />
+                    <ChangeIcon change={change} />
                     <span>{formattedChange} ({formattedChangePercent})</span>
                 </div>
             </div>
@@ -55,7 +60,7 @@ export const StockCard = ({ stock, user, onStockSelect, onNavigate, onOpenTradeM
                   className="btn btn--buy" 
                   onClick={(e) => handleAction(e, 'buy')}
                   aria-label={`Acheter une action de ${stock.name}`}
-                  disabled={user.isLoggedIn && user.cash < stock.price}
+                  disabled={user.isLoggedIn && user.cash < price}
                 >
                     Acheter
                 </button>

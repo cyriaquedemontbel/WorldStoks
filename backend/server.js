@@ -1,35 +1,34 @@
-require('dotenv').config(); // Charge les variables d'environnement dès le démarrage
-
+require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
-const cors = require('cors'); // Pour gérer les requêtes entre front et back
+const cors = require('cors');
+
 const app = express();
-const PORT = process.env.PORT || 5000; // Le port de notre serveur, 5000 par défaut
+const PORT = process.env.PORT || 5000;
 
-// --- Middlewares ---
-app.use(express.json()); // Permet à Express de lire le JSON envoyé dans les requêtes
-app.use(cors()); // Active CORS pour toutes les requêtes
+// Middleware
+app.use(express.json());
+app.use(cors());
 
-// --- Connexion à la base de données MongoDB ---
-mongoose.connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-})
-.then(() => console.log('Connexion à MongoDB réussie !'))
-.catch(err => console.error('Erreur de connexion à MongoDB :', err));
+// Connexion à MongoDB
+mongoose.connect(process.env.MONGO_URI)
+    .then(() => console.log('Connexion à MongoDB réussie !'))
+    .catch(err => console.error('Erreur de connexion à MongoDB :', err));
 
-// --- Routes (API Endpoints) ---
-// Routes API
-app.use('/api/countries', require('./routes/countries'));
-app.use('/api/trades', require('./routes/trades'));
+// Routes
 app.use('/api/auth', require('./routes/auth'));
+app.use('/api/stocks', require('./routes/stocks'));
+app.use('/api/trades', require('./routes/trades'));
+app.use('/api/user', require('./routes/user'));
+app.use('/api/admin', require('./routes/admin'));
 
 // Route de test
-app.get('/', (req, res) => {
-    res.send('API World Stocks fonctionne !');
+app.get('/', (req, res) => res.send('API World Stocks fonctionne !'));
+
+// Gestion globale des erreurs (catch-all)
+app.use((err, req, res, next) => {
+    console.error('Erreur serveur :', err);
+    res.status(500).json({ error: 'Erreur serveur interne' });
 });
 
-// --- Démarrage du serveur ---
-app.listen(PORT, () => {
-    console.log(`Serveur démarré sur le port ${PORT}`);
-});
+app.listen(PORT, () => console.log(`Serveur démarré sur le port ${PORT}`));

@@ -1,6 +1,7 @@
 import React from 'react';
 import { User, Page } from '../types';
 import { Logo } from './Logo';
+import { text } from 'stream/consumers';
 
 interface HeaderProps {
     user: User;
@@ -10,45 +11,35 @@ interface HeaderProps {
 }
 
 export const Header = ({ user, currentPage, onNavigate, onLogout }: HeaderProps) => {
-    // Navigation items for guests
-    const guestNavItems: { page: Page; label: string; }[] = [
+    const guestNav: { page: Page; label: string }[] = [
         { page: 'home', label: 'Marchés' },
         { page: 'about', label: 'À Propos' },
     ];
 
-    // Navigation items for regular logged-in users
-    const userNavItems: { page: Page; label: string; }[] = [
+    const userNav: { page: Page; label: string }[] = [
         { page: 'home', label: 'Accueil' },
         { page: 'portfolio', label: 'Portefeuille' },
         { page: 'history', label: 'Historique' },
         { page: 'about', label: 'À Propos' },
     ];
 
-    // Navigation items for admin users
-    const adminNavItems: { page: Page; label: string; }[] = [
+    const adminNav: { page: Page; label: string }[] = [
         { page: 'home', label: 'Marchés' },
         { page: 'admin', label: 'Gestion' },
     ];
 
-    let finalNavItems: { page: Page; label: string; }[];
-
-    if (user.isLoggedIn) {
-        if (user.isAdmin) {
-            finalNavItems = adminNavItems;
-        } else {
-            finalNavItems = userNavItems;
-        }
-    } else {
-        finalNavItems = guestNavItems;
-    }
+    const navItems: { page: Page; label: string }[] = user.isLoggedIn
+        ? (user.isAdmin ? adminNav : userNav)
+        : guestNav;
 
     return (
         <header className="main-header">
             <div className="header-content">
                 <Logo onClick={() => onNavigate('home')} />
+
                 <nav className="main-nav">
                     <ul>
-                        {finalNavItems.map(item => (
+                        {navItems.map(item => (
                             <li key={item.page}>
                                 <button
                                     onClick={() => onNavigate(item.page)}
@@ -61,19 +52,35 @@ export const Header = ({ user, currentPage, onNavigate, onLogout }: HeaderProps)
                         ))}
                     </ul>
                 </nav>
+
                 <div className="user-actions">
                     {user.isLoggedIn ? (
                         <>
                             <div className="user-info">
-                                <span className="user-email">{user.email}</span>
-                                <button 
-                                    className={`user-cash-btn ${currentPage === 'funds' ? 'active' : ''}`}
-                                    onClick={() => onNavigate('funds')}
-                                    aria-label="Gérer mes fonds"
-                                >
-                                    <span className="user-cash">{user.cash.toLocaleString('fr-FR', { style: 'currency', currency: 'USD' })}</span>
-                                </button>
+                            <button
+                                className="user-pseudo-btn"
+                                onClick={() => onNavigate('settings')}
+                                style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    color : 'white',
+                                    cursor: 'pointer',
+                                    textDecoration: 'underline',
+                                }}
+                            >
+                                {user.username || user.email}
+                            </button>
+                            <button
+                                className={`user-cash-btn ${currentPage === 'funds' ? 'active' : ''}`}
+                                onClick={() => onNavigate('funds')}
+                                aria-label="Gérer mes fonds"
+                            >
+                                {user.cash != null
+                                ? user.cash.toLocaleString('fr-FR', { style: 'currency', currency: 'USD' })
+                                : '$0.00'}
+                            </button>
                             </div>
+
                             <button className="btn btn--secondary" onClick={onLogout}>Déconnexion</button>
                         </>
                     ) : (
