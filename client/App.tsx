@@ -5,15 +5,15 @@ import { HomePage } from './pages/HomePage';
 import { StockDetailPage } from './pages/StockDetailPage';
 import { LoginPage } from './pages/LoginPage';
 import { AboutPage } from './pages/AboutPage';
+import OrderBookPage from './pages/OrderBookPage';
 import { PortfolioPage } from './pages/PortfolioPage';
 import { HistoryPage } from './pages/HistoryPage';
 import { FundsPage } from './pages/FundsPage';
 import { AdminPage } from './pages/AdminPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { TradeModal } from './components/TradeModal';
-import OrderBookPage from './pages/OrderBookPage';
 import { Stock, User, Transaction, Page } from './types';
-import * as api from './api';
+import * as api from './services/api';
 
 const guestUser: User = {
   id: 'guest',
@@ -36,7 +36,7 @@ type TradeModalState = {
   type: 'buy' | 'sell' | null;
 };
 
-export const AppContent: React.FC = () => {
+const App: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -45,9 +45,12 @@ export const AppContent: React.FC = () => {
   const [history, setHistory] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string>('');
-  const [tradeModalState, setTradeModalState] = useState<TradeModalState>({ isOpen: false, stock: null, type: null });
+  const [tradeModalState, setTradeModalState] = useState<TradeModalState>({
+    isOpen: false,
+    stock: null,
+    type: null,
+  });
 
-  // Détecte la page courante pour Header
   const currentPage: Page = (() => {
     const path = location.pathname.split('/')[1];
     if (!path || path === '') return 'home';
@@ -60,7 +63,6 @@ export const AppContent: React.FC = () => {
     setTimeout(() => setErrorMessage(''), 3000);
   };
 
-  // Charger stocks + user + history
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
@@ -93,7 +95,37 @@ export const AppContent: React.FC = () => {
     setStocks(prev => prev.map(s => s?.ticker === updatedStock?.ticker ? updatedStock : s));
   }, []);
 
-  // Auth functions
+  const handleNavigate = (page: Page) => {
+    switch (page) {
+      case 'home':
+        navigate('/');
+        break;
+      case 'portfolio':
+        navigate('/portfolio');
+        break;
+      case 'funds':
+        navigate('/funds');
+        break;
+      case 'history':
+        navigate('/history');
+        break;
+      case 'settings':
+        navigate('/settings');
+        break;
+      case 'about':
+        navigate('/about');
+        break;
+      case 'login':
+        navigate('/login');
+        break;
+      case 'admin':
+        navigate('/admin');
+        break;
+      default:
+        navigate('/');
+    }
+  };
+
   const handleLogin = async (email: string, pass: string) => {
     try {
       const { token, user: userData } = await api.apiLogin(email, pass);
@@ -156,7 +188,6 @@ export const AppContent: React.FC = () => {
     navigate('/');
   };
 
-  // Trading functions
   const handleTrade = async (
     tradeFn: () => Promise<{ success: boolean; user: User; stock: Stock }>,
     successMsg: string
@@ -206,7 +237,6 @@ export const AppContent: React.FC = () => {
       handleTrade(() => api.apiSellStock(ticker, quantity), `${quantity} action(s) vendue(s) !`);
   };
 
-  // Admin / Stock management
   const handleAddStock = async (stock: Stock) => {
     try {
       const newStock = await api.apiAddStock(stock);
@@ -241,7 +271,6 @@ export const AppContent: React.FC = () => {
     }
   };
 
-  // Update funds
   const handleUpdateFunds = async (amount: number, type: 'deposit' | 'withdraw') => {
     try {
       await api.apiUpdateFunds(amount, type);
@@ -261,39 +290,89 @@ export const AppContent: React.FC = () => {
     }
   };
 
-  if (isLoading) return <div className="loader-container"><div className="loader"></div></div>;
+  if (isLoading)
+    return (
+      <div className="loader-container">
+        <div className="loader"></div>
+      </div>
+    );
 
   return (
     <>
       <Header
         user={user}
         currentPage={currentPage}
-        onNavigate={(page: Page) => navigate(page === 'home' ? '/' : `/${page}`)}
+        onNavigate={handleNavigate}
         onLogout={handleLogout}
       />
 
       {errorMessage && <div className="error-toast">{errorMessage}</div>}
 
       <Routes>
-        <Route path="/" element={<HomePage stocks={stocks} user={user} onStockSelect={(ticker) => navigate(`/stock/${ticker}`)} onOpenTradeModal={handleOpenTradeModal} onNavigate={(page) => navigate(page === 'home' ? '/' : `/${page}`)} />} />
-        <Route path="/stock/:ticker" element={<StockDetailPage stocks={stocks} user={user} onOpenTradeModal={handleOpenTradeModal} />} />
-        <Route path="/orderbook/:ticker" element={<OrderBookPage />} />
+        <Route
+          path="/"
+          element={
+            <HomePage
+              stocks={stocks}
+              user={user}
+              onStockSelect={(ticker) => navigate(`/stock/${ticker}`)}
+              onOpenTradeModal={handleOpenTradeModal}
+              onNavigate={handleNavigate}
+            />
+          }
+        />
+        <Route
+          path="/orderbook/:ticker"
+          element={<OrderBookPage />}
+        />
+        <Route
+          path="/stock/:ticker"
+          element={<StockDetailPage stocks={stocks} user={user} onOpenTradeModal={handleOpenTradeModal} />}
+        />
         <Route path="/login" element={<LoginPage onLogin={handleLogin} onSignUp={handleSignUp} />} />
         <Route path="/about" element={<AboutPage />} />
-        <Route path="/portfolio" element={<PortfolioPage stocks={stocks} user={user} onNavigate={(page, ticker) => ticker ? navigate(`/stock/${ticker}`) : navigate(page === 'home' ? '/' : `/${page}`)} />} />
+        <Route
+          path="/portfolio"
+          element={
+            <PortfolioPage
+              stocks={stocks}
+              user={user}
+              onNavigate={(page, ticker) => ticker ? navigate(`/stock/${ticker}`) : handleNavigate(page)}
+            />
+          }
+        />
         <Route path="/history" element={<HistoryPage history={history} />} />
         <Route path="/funds" element={<FundsPage user={user} onUpdateFunds={handleUpdateFunds} />} />
-        <Route path="/admin" element={user.isAdmin ? <AdminPage stocks={stocks} onAddStock={handleAddStock} onUpdateStock={handleUpdateStock} onDeleteStock={handleDeleteStock} /> : <Navigate to="/" />} />
+        <Route
+          path="/admin"
+          element={
+            user.isAdmin ? (
+              <AdminPage
+                stocks={stocks}
+                onAddStock={handleAddStock}
+                onUpdateStock={handleUpdateStock}
+                onDeleteStock={handleDeleteStock}
+              />
+            ) : (
+              <Navigate to="/" />
+            )
+          }
+        />
         <Route path="/settings" element={<SettingsPage user={user} onUpdateUser={setUser} />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
 
       {tradeModalState.isOpen && tradeModalState.stock && tradeModalState.type && (
-        <TradeModal user={user} stock={tradeModalState.stock} type={tradeModalState.type} onClose={handleCloseTradeModal} onConfirm={handleConfirmTrade} />
+        <TradeModal
+          user={user}
+          stock={tradeModalState.stock}
+          type={tradeModalState.type}
+          onClose={handleCloseTradeModal}
+          onConfirm={handleConfirmTrade}
+        />
       )}
     </>
   );
 };
 
-// App root — PAS de Router ici !
-export const App: React.FC = () => <AppContent />;
+export default App;

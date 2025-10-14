@@ -1,7 +1,7 @@
 // pages/SettingsPage.tsx
 import React, { useState } from 'react';
 import { User } from '../types';
-import * as api from '../api';
+import * as api from '../services/api';
 
 interface SettingsPageProps {
   user: User;

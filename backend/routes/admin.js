@@ -15,8 +15,37 @@ router.post('/stocks', auth, async (req, res) => {
     const existing = await Stock.findOne({ ticker });
     if (existing) return res.status(400).json({ message: 'Ticker déjà existant' });
 
-    const stock = new Stock({ name, ticker, price, circulating_supply });
+    const stock = new Stock({ name, ticker, price, circulatingSupply: circulating_supply });
     await stock.save();
+
+    // Création automatique des ordres de vente pour l'admin
+    const Order = require('../models/Order');
+    const User = require('../models/User');
+    // On récupère l'admin (celui qui fait la requête)
+    const adminUser = req.user;
+
+    // Ajoute les actions au portefeuille de l'admin
+    const Portfolio = require('../models/Portfolio');
+    const maxQty = stock.circulatingSupply || stock.maxSupply || circulating_supply;
+    if (adminUser && maxQty > 0) {
+      // Ajout au portefeuille
+      await Portfolio.create({
+        user: adminUser._id,
+        stock: stock._id,
+        quantity: maxQty
+      });
+      // Crée un seul ordre de vente avec la quantité totale
+      const order = new Order({
+        user: adminUser._id,
+        stock: stock._id,
+        type: 'sell',
+        price: price,
+        quantity: maxQty,
+        quantityRemaining: maxQty,
+        status: 'open',
+      });
+      await order.save();
+    }
 
     res.status(201).json(stock);
   } catch (err) {

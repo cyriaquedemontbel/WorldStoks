@@ -146,4 +146,33 @@ router.get('/my', auth, async (req, res) => {
   }
 });
 
+// Récupérer tous les ordres de l'admin
+router.get('/admin', auth, async (req, res) => {
+  try {
+    if (!req.user.isAdmin) return res.status(403).json({ message: 'Accès refusé' });
+    const orders = await Order.find({ user: req.user._id }).populate('stock');
+    res.json({ orders });
+  } catch (err) {
+    console.error('Erreur récupération ordres admin:', err);
+    res.status(500).json({ message: "Impossible de récupérer les ordres de l'admin" });
+  }
+});
+
+// Supprimer un ordre par son id (admin ou propriétaire)
+router.delete('/:id', auth, async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ message: 'Ordre non trouvé' });
+    // Seul l'admin ou le propriétaire peut supprimer
+    if (!req.user.isAdmin && String(order.user) !== String(req.user._id)) {
+      return res.status(403).json({ message: 'Accès refusé' });
+    }
+    await order.deleteOne();
+    res.json({ success: true, message: 'Ordre supprimé' });
+  } catch (err) {
+    console.error('Erreur suppression ordre:', err);
+    res.status(500).json({ message: "Impossible de supprimer l'ordre" });
+  }
+});
+
 module.exports = router;

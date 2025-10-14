@@ -19,6 +19,7 @@ export const HomePage: React.FC<HomePageProps> = ({
 }) => {
   const [stockList, setStockList] = useState<Stock[]>(stocks);
   const [searchQuery, setSearchQuery] = useState("");
+  useEffect(() => setStockList(stocks), [stocks]);
 
 
   const filteredStocks = useMemo(() => {

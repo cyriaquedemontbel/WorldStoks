@@ -24,12 +24,13 @@ export const Header: React.FC<HeaderProps> = ({ user, currentPage, onNavigate, o
     { page: 'about', label: 'À Propos' },
   ];
 
-  const adminNav: { page: Page; label: string }[] = [
+  const adminNav: { page: Page | 'admin-orders'; label: string }[] = [
     { page: 'home', label: 'Marchés' },
     { page: 'admin', label: 'Gestion' },
+    { page: 'admin-orders', label: 'Ordres Admin' },
   ];
 
-  const navItems: { page: Page; label: string }[] = user.isLoggedIn
+  const navItems: { page: Page | 'admin-orders'; label: string }[] = user.isLoggedIn
     ? user.isAdmin
       ? adminNav
       : userNav
@@ -48,7 +49,15 @@ export const Header: React.FC<HeaderProps> = ({ user, currentPage, onNavigate, o
               <li key={item.page}>
                 {item.page === 'orderbook' ? (
                   <button
-                    onClick={() => window.location.href = '/orderbook/AAPL'}
+                    onClick={() => onNavigate('orderbook', 'AAPL')}
+                    className={currentPage === item.page ? 'active' : ''}
+                    aria-current={currentPage === item.page ? 'page' : undefined}
+                  >
+                    {item.label}
+                  </button>
+                ) : item.page === 'admin-orders' ? (
+                  <button
+                    onClick={() => onNavigate('admin-orders')}
                     className={currentPage === item.page ? 'active' : ''}
                     aria-current={currentPage === item.page ? 'page' : undefined}
                   >
@@ -56,7 +65,7 @@ export const Header: React.FC<HeaderProps> = ({ user, currentPage, onNavigate, o
                   </button>
                 ) : (
                   <button
-                    onClick={() => onNavigate(item.page)}
+                    onClick={() => onNavigate(item.page as any)}
                     className={currentPage === item.page ? 'active' : ''}
                     aria-current={currentPage === item.page ? 'page' : undefined}
                   >

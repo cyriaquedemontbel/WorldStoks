@@ -6,12 +6,49 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
 
   return {
+    root: process.cwd(),
     server: {
-      port: 3000,
-      host: '0.0.0.0',
+      // Use a fixed port that matches the URL you want to open in the browser.
+      // This was changed from 3000 to 3001 to avoid conflicts with other services.
+      port: 3001,
+      host: 'localhost',
+      // Fail if port is in use instead of automatically selecting another port.
+      // This prevents the browser from loading an unexpected port (e.g. 3001)
+      // while the user keeps visiting http://localhost:3000 and getting 404s for
+      // module requests like /api.ts.
+      strictPort: true,
       proxy: {
-        '/api': 'http://localhost:5000'
-      }
+        '/api': {
+          target: 'http://localhost:5000',
+          changeOrigin: true,
+          secure: false,
+        },
+        '/auth': {
+          target: 'http://localhost:5000',
+          changeOrigin: true,
+          secure: false,
+        },
+        '/orders': {
+          target: 'http://localhost:5000',
+          changeOrigin: true,
+          secure: false,
+        },
+        '/stocks': {
+          target: 'http://localhost:5000',
+          changeOrigin: true,
+          secure: false,
+        },
+        '/trades': {
+          target: 'http://localhost:5000',
+          changeOrigin: true,
+          secure: false,
+        },
+        '/user': {
+          target: 'http://localhost:5000',
+          changeOrigin: true,
+          secure: false,
+        },
+      },
     },
     plugins: [react()],
     define: {
@@ -20,9 +57,7 @@ export default defineConfig(({ mode }) => {
     },
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, '.'),
-        react: path.resolve(__dirname, 'node_modules/react'),
-        'react-dom': path.resolve(__dirname, 'node_modules/react-dom'),
+        '@': path.resolve(process.cwd(), 'src'),
       },
     },
   };

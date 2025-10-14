@@ -5,7 +5,7 @@ const AuthStatus: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
+  const token = localStorage.getItem('authToken');
     if (!token) {
       setError('Aucun token trouvé.');
       return;

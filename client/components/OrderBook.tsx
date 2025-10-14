@@ -43,13 +43,14 @@ const OrderBook: React.FC<Props> = ({ ticker }) => {
   if (!orderBook) return <div>Aucun ordre pour cette action.</div>;
 
   return (
-    <div className="orderbook-container">
-      <h3>Carnet d'ordres pour {ticker}</h3>
-
-      <div style={{ display: 'flex', gap: '2rem' }}>
-        <div>
-          <h4>Achats (Bids)</h4>
-          <table>
+    <section className="orderbook-container" aria-labelledby="orderbook-title">
+      <header className="orderbook-header">
+        <h2 id="orderbook-title" className="orderbook-title">Carnet d'ordres pour <span className="orderbook-ticker">{ticker}</span></h2>
+      </header>
+      <div className="orderbook-tables">
+        <div className="orderbook-table-block">
+          <h4 className="orderbook-table-title orderbook-bids-title">Achats <span role="img" aria-label="Acheteur">🟢</span></h4>
+          <table className="orderbook-bids">
             <thead>
               <tr>
                 <th>Prix</th>
@@ -59,16 +60,16 @@ const OrderBook: React.FC<Props> = ({ ticker }) => {
             <tbody>
               {Array.isArray(orderBook.bids) && orderBook.bids.map(order => (
                 <tr key={order._id}>
-                  <td>{order.price.toFixed(2)} $</td>
+                  <td>{order.price}</td>
                   <td>{order.quantityRemaining}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-        <div>
-          <h4>Ventes (Asks)</h4>
-          <table>
+        <div className="orderbook-table-block">
+          <h4 className="orderbook-table-title orderbook-asks-title">Ventes <span role="img" aria-label="Vendeur">🔴</span></h4>
+          <table className="orderbook-asks">
             <thead>
               <tr>
                 <th>Prix</th>
@@ -78,7 +79,7 @@ const OrderBook: React.FC<Props> = ({ ticker }) => {
             <tbody>
               {Array.isArray(orderBook.asks) && orderBook.asks.map(order => (
                 <tr key={order._id}>
-                  <td>{order.price.toFixed(2)} $</td>
+                  <td>{order.price}</td>
                   <td>{order.quantityRemaining}</td>
                 </tr>
               ))}
@@ -86,7 +87,7 @@ const OrderBook: React.FC<Props> = ({ ticker }) => {
           </table>
         </div>
       </div>
-    </div>
+    </section>
   );
 };
 

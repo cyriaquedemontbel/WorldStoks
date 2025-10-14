@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Transaction, Order } from '../types';
-import { apiFetchMyOrders } from '../api';
+import { apiFetchMyOrders } from '../services/api';
 
 interface HistoryPageProps {
     history: Transaction[];

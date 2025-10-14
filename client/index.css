@@ -1,3 +1,404 @@
+/* Historique des ordres */
+.orderbook-history-container {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.10);
+  padding: 2rem 1.5rem;
+  margin-bottom: 2rem;
+}
+.orderbook-history-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+.orderbook-history-table th, .orderbook-history-table td {
+  padding: 0.7rem 0.5rem;
+  text-align: center;
+}
+.orderbook-history-table th {
+  background: #f0f4fa;
+  font-weight: 600;
+}
+.orderbook-history-table tr {
+  transition: background 0.2s;
+}
+.orderbook-history-table tr:hover {
+  background: #f7fbff;
+}
+.orderbook-menu-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2rem;
+  background: #f5f8fa;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  margin-bottom: 2rem;
+  padding: 1rem 0.5rem;
+}
+.orderbook-menu-header .orderbook-menu-tab {
+  background: none;
+  border: none;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #0077ff;
+  padding: 0.7rem 2rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.orderbook-menu-header .orderbook-menu-tab.active {
+  background: #0077ff;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0,119,255,0.08);
+}
+.orderbook-menu-header .orderbook-menu-tab:hover:not(.active) {
+  background: #e0eaff;
+  color: #005bb5;
+}
+.orderbook-slide-wrapper {
+  position: relative;
+  width: 100%;
+  min-height: 320px;
+  overflow: hidden;
+}
+.orderbook-slide-content {
+  display: flex;
+  width: 200%;
+  transition: transform 0.5s cubic-bezier(.77,.2,.05,1.0);
+}
+.orderbook-slide-page {
+  width: 100%;
+  flex-shrink: 0;
+}
+.orderbook-menu-content {
+  position: relative;
+  min-height: 320px;
+}
+/* Carnet d'ordre - uniformisation */
+.orderbook-container {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.10);
+  padding: 2rem 1.5rem;
+  margin-bottom: 2rem;
+}
+.orderbook-header {
+  margin-bottom: 1.5rem;
+}
+.orderbook-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0077ff;
+  text-align: center;
+}
+.orderbook-ticker {
+  color: #222;
+  font-weight: 600;
+}
+.orderbook-tables {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+.orderbook-table-block {
+  flex: 1;
+  min-width: 220px;
+}
+.orderbook-table-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #222;
+}
+.orderbook-bids-title {
+  color: #1a7f37;
+}
+.orderbook-asks-title {
+  color: #c0392b;
+}
+.orderbook-bids th, .orderbook-bids td {
+  color: #1a7f37;
+}
+.orderbook-asks th, .orderbook-asks td {
+  color: #c0392b;
+}
+.orderbook-bids tr:hover {
+  background: #eafaf1;
+}
+.orderbook-asks tr:hover {
+  background: #fdecea;
+}
+.orderbook-table-block table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+}
+.orderbook-table-block th, .orderbook-table-block td {
+  padding: 0.7rem 0.5rem;
+  text-align: center;
+}
+.orderbook-table-block th {
+  background: #f0f4fa;
+  font-weight: 600;
+}
+.orderform-container {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.10);
+  padding: 2rem 1.5rem;
+  margin-bottom: 2rem;
+}
+.orderform-header {
+  margin-bottom: 1.5rem;
+}
+.orderform-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0077ff;
+  text-align: center;
+}
+.orderform-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  max-width: 400px;
+  margin: 0 auto;
+}
+.orderform-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.orderform-form label {
+  font-weight: 500;
+  color: #222;
+}
+.orderform-form input, .orderform-form select {
+  border-radius: 6px;
+  border: 1px solid #dbeafe;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  background: #f5f8fa;
+  color: #222;
+}
+.orderform-form .btn--primary {
+  background: #0077ff;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.7rem 1.5rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.orderform-form .btn--primary:hover {
+  background: #005bb5;
+}
+.orderform-message {
+  margin-top: 0.5rem;
+  font-size: 1rem;
+  text-align: center;
+}
+.orderform-error {
+  color: #c0392b;
+}
+.orderform-success {
+  color: #1a7f37;
+}
+.orderbook-menu-wrapper {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.10);
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 2.5rem 2rem;
+}
+.orderbook-menu-nav {
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+  margin-bottom: 2.5rem;
+}
+.orderbook-menu-nav button {
+  background: #f5f8fa;
+  border: none;
+  border-radius: 8px 8px 0 0;
+  padding: 0.8rem 2.2rem;
+  font-size: 1.15rem;
+  cursor: pointer;
+  color: #222;
+  font-weight: 500;
+  transition: background 0.2s, color 0.2s;
+}
+.orderbook-menu-nav button.active {
+  background: #0077ff;
+  color: #fff;
+  font-weight: bold;
+  box-shadow: 0 2px 8px rgba(0,119,255,0.08);
+}
+.orderbook-menu-nav button:hover:not(.active) {
+  background: #e0eaff;
+  color: #0077ff;
+}
+.orderbook-menu-content {
+  min-height: 320px;
+}
+.orderbook-carousel {
+  background: none;
+  box-shadow: none;
+  border-radius: 0;
+  margin: 0;
+  padding: 0;
+  max-width: 100%;
+}
+.orderbook-carousel-content {
+  display: flex;
+  transition: transform 0.5s cubic-bezier(.77,.2,.05,1.0);
+  width: 200%;
+}
+.orderbook-carousel-page {
+  width: 100%;
+  flex-shrink: 0;
+  padding: 0 1rem;
+}
+.orderbook-menu-wrapper h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  color: #0077ff;
+  text-align: center;
+}
+.orderbook-menu-wrapper label {
+  font-weight: 500;
+  color: #222;
+}
+.orderbook-menu-wrapper select {
+  border-radius: 6px;
+  border: 1px solid #dbeafe;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  margin-left: 1rem;
+  background: #f5f8fa;
+  color: #222;
+}
+@media (max-width: 600px) {
+  .orderbook-menu-wrapper {
+    padding: 1rem 0.5rem;
+    max-width: 100%;
+  }
+  .orderbook-menu-nav button {
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+  }
+}
+/* Carrousel carnet d'ordre */
+/* Carrousel carnet d'ordre amélioré */
+.orderbook-carousel {
+  position: relative;
+  width: 100%;
+  min-height: 320px;
+  overflow: hidden;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  margin: 2rem auto;
+  max-width: 700px;
+  padding: 2rem;
+}
+.orderbook-carousel-content {
+  display: flex;
+  transition: transform 0.5s cubic-bezier(.77,.2,.05,1.0);
+  width: 200%;
+}
+.orderbook-carousel-page {
+  width: 100%;
+  flex-shrink: 0;
+  padding: 0 1rem;
+}
+/* Carnet d'ordre stylé */
+.orderbook-container {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  padding: 2rem;
+  margin: 2rem auto;
+  max-width: 700px;
+}
+.orderbook-menu-nav {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+.orderbook-menu-nav button {
+  background: #f5f5f5;
+  border: none;
+  border-radius: 6px 6px 0 0;
+  padding: 0.7rem 2rem;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.orderbook-menu-nav button.active {
+  background: #0077ff;
+  color: #fff;
+  font-weight: bold;
+}
+.orderbook-menu-nav button:hover:not(.active) {
+  background: #e0eaff;
+}
+.orderbook-menu-content {
+  min-height: 300px;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+th, td {
+  padding: 0.7rem 0.5rem;
+  text-align: center;
+}
+th {
+  background: #f0f4fa;
+  font-weight: 600;
+}
+tr {
+  transition: background 0.2s;
+}
+tr:hover {
+  background: #f7fbff;
+}
+.orderbook-bids th, .orderbook-bids td {
+  color: #1a7f37;
+}
+.orderbook-asks th, .orderbook-asks td {
+  color: #c0392b;
+}
+.orderbook-bids tr:hover {
+  background: #eafaf1;
+}
+.orderbook-asks tr:hover {
+  background: #fdecea;
+}
+.orderbook-container h4 {
+  margin-bottom: 0.5rem;
+}
+.orderbook-container h3 {
+  margin-bottom: 1.5rem;
+}
+@media (max-width: 600px) {
+  .orderbook-container {
+    padding: 1rem;
+    max-width: 100%;
+  }
+  .orderbook-menu-nav button {
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+  }
+}
 /* --- Crypto Detail Page --- */
 .crypto-detail-page-container {
   display: flex;

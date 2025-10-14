@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { apiFetchMyOrders } from '../api';
+import { apiFetchMyOrders } from '../services/api';
 
 interface Props {
   ticker: string;
@@ -21,7 +21,7 @@ const OrderForm: React.FC<Props> = ({ ticker }) => {
     setFormError(null);
     setSuccess(null);
     try {
-      const token = localStorage.getItem('token');
+  const token = localStorage.getItem('authToken');
       const res = await fetch('/api/orders/place', {
         method: 'POST',
         headers: {
@@ -52,18 +52,32 @@ const OrderForm: React.FC<Props> = ({ ticker }) => {
   };
 
   return (
-    <form onSubmit={handleSubmitOrder} style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
-      <select name="type" value={form.type} onChange={handleFormChange}>
-        <option value="buy">Acheter</option>
-        <option value="sell">Vendre</option>
-      </select>
-      <input name="price" type="number" step="0.01" placeholder="Prix" value={form.price} onChange={handleFormChange} required />
-      <input name="quantity" type="number" min="1" placeholder="Quantité" value={form.quantity} onChange={handleFormChange} required />
-      <button type="submit" disabled={formLoading}>Passer l'ordre</button>
-      {formError && <span style={{ color: 'red' }}>{formError}</span>}
-      {success && <span style={{ color: 'green' }}>{success}</span>}
-    </form>
+    <section className="orderform-container" aria-labelledby="orderform-title">
+      <header className="orderform-header">
+        <h2 id="orderform-title" className="orderform-title">Passer un ordre</h2>
+      </header>
+      <form className="orderform-form" onSubmit={handleSubmitOrder}>
+        <div className="orderform-row">
+          <label htmlFor="type">Type :</label>
+          <select name="type" id="type" value={form.type} onChange={handleFormChange}>
+            <option value="buy">Acheter</option>
+            <option value="sell">Vendre</option>
+          </select>
+        </div>
+        <div className="orderform-row">
+          <label htmlFor="price">Prix :</label>
+          <input name="price" id="price" type="number" step="0.01" placeholder="Prix" value={form.price} onChange={handleFormChange} required />
+        </div>
+        <div className="orderform-row">
+          <label htmlFor="quantity">Quantité :</label>
+          <input name="quantity" id="quantity" type="number" min="1" placeholder="Quantité" value={form.quantity} onChange={handleFormChange} required />
+        </div>
+        <button type="submit" className="btn btn--primary" disabled={formLoading}>Passer l'ordre</button>
+        {formError && <div className="orderform-message orderform-error">{formError}</div>}
+        {success && <div className="orderform-message orderform-success">{success}</div>}
+      </form>
+    </section>
   );
-};
+}
 
 export default OrderForm;
