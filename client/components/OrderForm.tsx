@@ -3,9 +3,11 @@ import { apiFetchMyOrders } from '../services/api';
 
 interface Props {
   ticker: string;
+  tickers: { ticker: string; name: string }[];
+  setTicker: (ticker: string) => void;
 }
 
-const OrderForm: React.FC<Props> = ({ ticker }) => {
+const OrderForm: React.FC<Props> = ({ ticker, tickers, setTicker }) => {
   const [form, setForm] = useState({ type: 'buy', price: '', quantity: '' });
   const [formLoading, setFormLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -57,6 +59,15 @@ const OrderForm: React.FC<Props> = ({ ticker }) => {
         <h2 id="orderform-title" className="orderform-title">Passer un ordre</h2>
       </header>
       <form className="orderform-form" onSubmit={handleSubmitOrder}>
+        <div className="orderform-row">
+          <label htmlFor="ticker">Action :</label>
+          <select name="ticker" id="ticker" value={ticker} onChange={e => setTicker(e.target.value)} required>
+            {tickers.length === 0 && <option value="APPL">APPL</option>}
+            {tickers.map(t => (
+              <option key={t.ticker} value={t.ticker}>{t.ticker} - {t.name}</option>
+            ))}
+          </select>
+        </div>
         <div className="orderform-row">
           <label htmlFor="type">Type :</label>
           <select name="type" id="type" value={form.type} onChange={handleFormChange}>

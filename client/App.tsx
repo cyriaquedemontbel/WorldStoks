@@ -7,7 +7,7 @@ import { LoginPage } from './pages/LoginPage';
 import { AboutPage } from './pages/AboutPage';
 import OrderBookPage from './pages/OrderBookPage';
 import { PortfolioPage } from './pages/PortfolioPage';
-import { HistoryPage } from './pages/HistoryPage';
+// ...existing code...
 import { FundsPage } from './pages/FundsPage';
 import { AdminPage } from './pages/AdminPage';
 import { SettingsPage } from './pages/SettingsPage';
@@ -95,7 +95,7 @@ const App: React.FC = () => {
     setStocks(prev => prev.map(s => s?.ticker === updatedStock?.ticker ? updatedStock : s));
   }, []);
 
-  const handleNavigate = (page: Page) => {
+  const handleNavigate = (page: Page, ticker?: string) => {
     switch (page) {
       case 'home':
         navigate('/');
@@ -121,6 +121,9 @@ const App: React.FC = () => {
       case 'admin':
         navigate('/admin');
         break;
+      case 'orderbook':
+        navigate(`/orderbook/${ticker || 'AAPL'}`);
+        break;
       default:
         navigate('/');
     }
@@ -129,7 +132,8 @@ const App: React.FC = () => {
   const handleLogin = async (email: string, pass: string) => {
     try {
       const { token, user: userData } = await api.apiLogin(email, pass);
-      localStorage.setItem('authToken', token);
+  localStorage.setItem('authToken', token);
+  if (userData?.email) localStorage.setItem('userEmail', userData.email);
 
       setUser({
         ...userData,
@@ -161,7 +165,8 @@ const App: React.FC = () => {
   }) => {
     try {
       const { token, user: userData } = await api.apiSignUp(data);
-      localStorage.setItem('authToken', token);
+  localStorage.setItem('authToken', token);
+  if (userData?.email) localStorage.setItem('userEmail', userData.email);
 
       setUser({
         ...userData,
@@ -231,10 +236,11 @@ const App: React.FC = () => {
 
   const handleConfirmTrade = (ticker: string, quantity: number) => {
     if (!tradeModalState.stock || !tradeModalState.type) return;
+    const price = tradeModalState.stock.price;
     if (tradeModalState.type === 'buy')
-      handleTrade(() => api.apiBuyStock(ticker, quantity), `${quantity} action(s) achetée(s) !`);
+      handleTrade(() => api.apiPlaceOrder(ticker, 'buy', price, quantity), `${quantity} action(s) achetée(s) !`);
     else
-      handleTrade(() => api.apiSellStock(ticker, quantity), `${quantity} action(s) vendue(s) !`);
+      handleTrade(() => api.apiPlaceOrder(ticker, 'sell', price, quantity), `${quantity} action(s) vendue(s) !`);
   };
 
   const handleAddStock = async (stock: Stock) => {
@@ -341,7 +347,7 @@ const App: React.FC = () => {
             />
           }
         />
-        <Route path="/history" element={<HistoryPage history={history} />} />
+  // ...existing code...
         <Route path="/funds" element={<FundsPage user={user} onUpdateFunds={handleUpdateFunds} />} />
         <Route
           path="/admin"

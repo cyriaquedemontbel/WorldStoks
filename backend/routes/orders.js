@@ -5,6 +5,7 @@ const Order = require('../models/Order');
 const Stock = require('../models/Stock');
 const Portfolio = require('../models/Portfolio');
 const Transaction = require('../models/Transaction');
+const User = require('../models/User');
 
 // Placer un ordre d'achat ou de vente
 router.post('/place', auth, async (req, res) => {
@@ -47,23 +48,29 @@ router.post('/place', auth, async (req, res) => {
     let qtyToMatch = order.quantityRemaining;
     if (type === 'buy') {
       // Cherche les ordres de vente ouverts au prix <= order.price
+      // Exclure les ordres appartenant à l'utilisateur qui place l'ordre
       matchedOrders = await Order.find({
         stock: stock._id,
         type: 'sell',
         price: { $lte: price },
         status: 'open',
-      }).sort({ price: 1, timestamp: 1 });
+        user: { $ne: req.user._id }
+      }).sort({ price: 1, timestamp: 1 }).populate('user');
     } else {
       // Cherche les ordres d'achat ouverts au prix >= order.price
+      // Exclure les ordres appartenant à l'utilisateur qui place l'ordre
       matchedOrders = await Order.find({
         stock: stock._id,
         type: 'buy',
         price: { $gte: price },
         status: 'open',
-      }).sort({ price: -1, timestamp: 1 });
+        user: { $ne: req.user._id }
+      }).sort({ price: -1, timestamp: 1 }).populate('user');
     }
 
     for (const match of matchedOrders) {
+      // Défensive: si un ordre appartient au même utilisateur (au cas où), on l'ignore
+      if (String(match.user?._id || match.user) === String(req.user._id)) continue;
       if (qtyToMatch <= 0) break;
       const matchQty = Math.min(qtyToMatch, match.quantityRemaining);
       const transactionPrice = match.price;
@@ -72,9 +79,14 @@ router.post('/place', auth, async (req, res) => {
       let buyer, seller;
       if (type === 'buy') {
         buyer = req.user;
-        seller = match.user;
+        // match.user is populated above; if not, fetch it
+        seller = match.user && match.user._id ? match.user : await (async () => {
+          try { return await User.findById(match.user); } catch { return null; }
+        })();
       } else {
-        buyer = match.user;
+        buyer = match.user && match.user._id ? match.user : await (async () => {
+          try { return await User.findById(match.user); } catch { return null; }
+        })();
         seller = req.user;
       }
 
@@ -176,3 +188,15 @@ router.delete('/:id', auth, async (req, res) => {
 });
 
 module.exports = router;
+
+// Endpoint public pour récupérer les ordres ouverts (utilisé par le frontend carnet d'ordres)
+router.get('/all', async (req, res) => {
+  try {
+    // Ne renvoyer que les ordres dont le statut est 'open' pour ne pas afficher les ordres déjà exécutés
+    const orders = await Order.find({ status: 'open' }).populate('user', 'email username').populate('stock', 'ticker name');
+    res.json({ orders: Array.isArray(orders) ? orders : [] });
+  } catch (err) {
+    console.error('Erreur récupération orders all:', err);
+    res.status(500).json({ message: 'Impossible de récupérer les ordres' });
+  }
+});

@@ -168,3 +168,26 @@ router.post('/sell', auth, async (req, res) => {
 });
 
 module.exports = router;
+
+// Endpoint public pour récupérer toutes les transactions (utilisé par le frontend)
+// Note: renvoie les transactions avec user.email et stock.ticker si disponibles
+router.get('/all', async (req, res) => {
+  try {
+    const transactions = await Transaction.find({}).populate('user', 'email').populate('stock', 'ticker name');
+    res.json(Array.isArray(transactions) ? transactions : []);
+  } catch (err) {
+    console.error('Erreur récupération transactions all:', err);
+    res.status(500).json({ message: 'Impossible de récupérer les transactions' });
+  }
+});
+
+// Endpoint pour récupérer les transactions de l'utilisateur connecté
+router.get('/my', auth, async (req, res) => {
+  try {
+    const transactions = await Transaction.find({ user: req.user._id }).populate('stock', 'ticker name').sort({ timestamp: -1 });
+    res.json(Array.isArray(transactions) ? transactions : []);
+  } catch (err) {
+    console.error('Erreur récupération transactions utilisateur:', err);
+    res.status(500).json({ message: 'Impossible de récupérer les transactions de l\'utilisateur' });
+  }
+});

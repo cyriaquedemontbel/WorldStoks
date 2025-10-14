@@ -8,9 +8,9 @@ export default defineConfig(({ mode }) => {
   return {
     root: process.cwd(),
     server: {
-      // Use a fixed port that matches the URL you want to open in the browser.
-      // This was changed from 3000 to 3001 to avoid conflicts with other services.
-      port: 3001,
+  // Allow Vite to pick a free port automatically to avoid port-in-use errors in the dev environment.
+  // Setting port to 0 asks the OS to choose an available ephemeral port.
+  port: 0,
       host: 'localhost',
       // Fail if port is in use instead of automatically selecting another port.
       // This prevents the browser from loading an unexpected port (e.g. 3001)

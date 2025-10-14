@@ -161,6 +161,20 @@ export const apiBuyStock = async (ticker: string, quantity: number) => {
   return res.json();
 };
 
+export const apiPlaceOrder = async (ticker: string, type: 'buy' | 'sell', price: number, quantity: number) => {
+    const token = getToken();
+    const res = await fetch(`${API_BASE_URL}/orders/place`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ ticker, type, price, quantity }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+};
+
 export const apiSellStock = async (ticker: string, quantity: number) => {
   const res = await fetch(`${API_BASE_URL}/trades/sell`, {
     method: 'POST',

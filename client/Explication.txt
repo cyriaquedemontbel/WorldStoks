@@ -35,7 +35,7 @@ pages/HomePage.tsx: La page d'accueil. Elle affiche la liste des actions (StockC
 pages/StockDetailPage.tsx: Affiche les informations détaillées d'une seule action, y compris son graphique de performance (StockChart), ses statistiques, et les boutons pour acheter/vendre.
 pages/LoginPage.tsx: Le formulaire de connexion et d'inscription. Il gère un état isLoading pour désactiver les boutons pendant que l'API répond.
 pages/PortfolioPage.tsx: Affiche le portefeuille de l'utilisateur : la valeur totale, les liquidités, et la liste des actions qu'il possède.
-pages/HistoryPage.tsx: Affiche un tableau avec l'historique de toutes les transactions (achats et ventes) de l'utilisateur.
+// ...existing code...
 pages/FundsPage.tsx: Permet à l'utilisateur de simuler un dépôt ou un retrait de fonds.
 pages/AdminPage.tsx: Une page réservée à l'admin pour créer, modifier ou supprimer des actions.
 pages/AboutPage.tsx: Une page statique avec des informations sur le projet.

@@ -6,7 +6,7 @@ import OrderBookPage from '../pages/OrderBookPage'
 import { StockDetailPage } from '../pages/StockDetailPage'
 import { PortfolioPage } from '../pages/PortfolioPage'
 import { FundsPage } from '../pages/FundsPage'
-import { HistoryPage } from '../pages/HistoryPage'
+// ...existing code...
 import AdminOrdersPage from '../pages/AdminOrdersPage'
 import { AdminPage } from '../pages/AdminPage'
 import { SettingsPage } from '../pages/SettingsPage'
@@ -122,7 +122,7 @@ export default function AppRouter(): React.ReactElement {
           <Route path="/login" element={<LoginPage onLogin={handleLogin} onSignUp={handleSignUp} />} />
           <Route path="/portfolio" element={<PortfolioPage user={user} stocks={stocks} onNavigate={handleNavigate} />} />
           <Route path="/funds" element={<FundsPage user={user} onUpdateFunds={async (amount, type) => { const u = await api.apiUpdateFunds(amount, type); setUser(u); return 'OK' }} />} />
-          <Route path="/history" element={<HistoryPage history={[]} />} />
+          // ...existing code...
           <Route path="/admin" element={<AdminPage stocks={stocks} onAddStock={async (s: any) => { try { await api.apiAddStock(s); return true } catch { return false } }} onUpdateStock={async (s: any) => { try { await api.apiUpdateStock(s); return true } catch { return false } }} onDeleteStock={async (ticker: string) => { try { await api.apiDeleteStock(ticker); setStocks(await api.apiFetchStocks()) } catch (e) { console.error(e) } }} />} />
           <Route path="/admin/orders" element={<AdminOrdersPage />} />
           <Route path="/settings" element={<SettingsPage user={user} onUpdateUser={async (u: any) => { const newUser = await api.apiUpdateUser(u); setUser(newUser); return newUser }} />} />

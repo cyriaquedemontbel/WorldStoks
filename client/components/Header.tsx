@@ -19,7 +19,6 @@ export const Header: React.FC<HeaderProps> = ({ user, currentPage, onNavigate, o
   const userNav: { page: Page; label: string }[] = [
     { page: 'home', label: 'Accueil' },
     { page: 'portfolio', label: 'Portefeuille' },
-    { page: 'history', label: 'Historique' },
     { page: 'orderbook', label: "Carnet d'ordres" },
     { page: 'about', label: 'À Propos' },
   ];
