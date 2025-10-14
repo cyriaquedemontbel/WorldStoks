@@ -111,18 +111,30 @@ router.post('/place', auth, async (req, res) => {
       await seller.save();
 
       // Création de la transaction
-      const transaction = new Transaction({
+      // Créer une transaction pour l'acheteur et une pour le vendeur afin que les deux voient l'opération
+      const buyerTransaction = new Transaction({
         user: buyer._id,
         stock: stock._id,
         name: stock.name,
         ticker: stock.ticker,
-        type: type === 'buy' ? 'buy' : 'sell',
+        type: 'buy',
         quantity: matchQty,
         pricePerShare: transactionPrice,
         totalValue: transactionPrice * matchQty,
         timestamp: new Date(),
       });
-      await transaction.save();
+      const sellerTransaction = new Transaction({
+        user: seller._id,
+        stock: stock._id,
+        name: stock.name,
+        ticker: stock.ticker,
+        type: 'sell',
+        quantity: matchQty,
+        pricePerShare: transactionPrice,
+        totalValue: transactionPrice * matchQty,
+        timestamp: new Date(),
+      });
+      await Promise.all([buyerTransaction.save(), sellerTransaction.save()]);
 
       // Mise à jour du prix de l'action
       stock.price = transactionPrice;

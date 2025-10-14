@@ -1,5 +1,6 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import { User, Stock, Page } from '../types';
+import * as api from '../services/api';
 import { PortfolioChart } from '../components/PortfolioChart';
 
 interface PortfolioPageProps {
@@ -9,17 +10,55 @@ interface PortfolioPageProps {
 }
 
 export const PortfolioPage = ({ user, stocks, onNavigate }: PortfolioPageProps) => {
-  if (!user) return <p>Chargement du portefeuille...</p>;
+  // Keep a local copy of user and stocks so the page can refresh itself
+  const [localUser, setLocalUser] = useState<User | null>(user);
+  const [localStocks, setLocalStocks] = useState<Stock[]>(stocks);
 
-  const cash = user.cash ?? 0;
+  useEffect(() => {
+    let mounted = true;
+
+    const load = async () => {
+      try {
+        const [u, s] = await Promise.all([api.apiFetchUserData(), api.apiFetchStocks()]);
+        if (!mounted) return;
+        if (u) setLocalUser(u);
+        if (s && s.length) setLocalStocks(s);
+      } catch (err) {
+        // silent fail — page can continue using props
+      }
+    };
+
+    // initial load
+    load();
+
+    // poll every 5 seconds while mounted
+    const id = setInterval(load, 5000);
+    return () => { mounted = false; clearInterval(id); };
+  }, []);
+
+  const effectiveUser = localUser ?? user;
+  const effectiveStocks = localStocks ?? stocks;
+
+  // Keep local copies in sync immediately when parent props change so
+  // the page reflects updates performed at the app level without delay.
+  useEffect(() => {
+    if (user) setLocalUser(user);
+  }, [user]);
+
+  useEffect(() => {
+    if (stocks && stocks.length) setLocalStocks(stocks);
+  }, [stocks]);
+
+  if (!effectiveUser) return <p>Chargement du portefeuille...</p>;
+  const cash = effectiveUser.cash ?? 0;
 
   // ✅ Calcul des holdings avec valeur actuelle basée sur les prix du marché
   const userHoldings = useMemo(() => {
-    return Object.entries(user.portfolio ?? {}).map(([ticker, holding]) => {
+    return Object.entries(effectiveUser.portfolio ?? {}).map(([ticker, holding]) => {
       // On cast le holding pour que TS reconnaisse quantity et price
       const { quantity, price } = holding as { quantity: number; price: number };
 
-      const stockData = stocks.find(s => s.ticker === ticker);
+      const stockData = effectiveStocks.find(s => s.ticker === ticker);
       if (!stockData || quantity <= 0) return null;
 
       return {
@@ -33,7 +72,7 @@ export const PortfolioPage = ({ user, stocks, onNavigate }: PortfolioPageProps) 
       (h): h is Stock & { quantity: number; currentValue: number; purchasePrice: number } => h !== null
     )
     .sort((a, b) => b.currentValue - a.currentValue);
-  }, [user.portfolio, stocks]);
+  }, [effectiveUser.portfolio, effectiveStocks]);
 
   const totalStockValue = useMemo(() => userHoldings.reduce((sum, h) => sum + h.currentValue, 0), [userHoldings]);
   const totalPortfolioValue = useMemo(() => cash + totalStockValue, [cash, totalStockValue]);

@@ -60,7 +60,9 @@ function AllOrdersTable({ orders }: { orders: any[] }) {
 // ...existing code...
 
 const HistoryTab: React.FC<{ history: Transaction[]; orders?: any[]; onCancel?: (id: string) => void; isAuth?: boolean }> = ({ history, orders = [], onCancel, isAuth }) => {
-  const sortedHistory = Array.isArray(history) ? [...history].reverse() : [];
+  const sortedHistory = Array.isArray(history)
+    ? [...history].sort((a, b) => new Date(b.timestamp ?? b.createdAt ?? b.date).getTime() - new Date(a.timestamp ?? a.createdAt ?? a.date).getTime())
+    : [];
     // ...existing code...
 
   return (
@@ -141,7 +143,8 @@ const HistoryTab: React.FC<{ history: Transaction[]; orders?: any[]; onCancel?: 
             </thead>
             <tbody>
               {sortedHistory.map(tx => {
-                const timestamp = tx.date ? new Date(tx.date).toLocaleString('fr-FR') : '-';
+                const rawTs = tx.timestamp ?? tx.createdAt ?? tx.date ?? null;
+                const timestamp = rawTs ? new Date(rawTs).toLocaleString('fr-FR') : '-';
                 const quantity = tx.quantity ?? 0;
                 const pricePerShare = tx.pricePerShare ?? tx.price ?? 0;
                 const totalValue = tx.totalValue ?? quantity * pricePerShare;
