@@ -5,7 +5,7 @@ import { Transaction } from '../types';
 // ...existing code...
 
 // Table d'ordres complète pour le tab Carnet d'ordre
-function AllOrdersTable({ orders }: { orders: any[] }) {
+function AllOrdersTable({ orders, onSelectOrder }: { orders: any[]; onSelectOrder?: (order: any) => void }) {
   return (
     <div className="orders-table-container" style={{ maxWidth: 900, margin: '0 auto', background: '#222', borderRadius: '1rem', boxShadow: '0 2px 16px rgba(0,0,0,0.12)', padding: '2rem' }}>
       <table className="orders-table" style={{ width: '100%', borderCollapse: 'collapse', color: '#f3f3f3' }}>
@@ -29,12 +29,17 @@ function AllOrdersTable({ orders }: { orders: any[] }) {
             let statut = 'En attente';
             if (order.status === 'matched') statut = order.type === 'buy' ? 'Acheté' : 'Vendu';
             if (order.status === 'cancelled') statut = 'Annulé';
+
             return (
-              <tr key={order._id}>
+              <tr
+                key={order._id}
+                onClick={() => onSelectOrder && onSelectOrder(order)}
+                style={{ cursor: onSelectOrder ? 'pointer' : 'default' }}
+              >
                 <td style={{ padding: '0.6rem', textAlign: 'center' }}>{new Date(order.timestamp).toLocaleString('fr-FR')}</td>
                 <td style={{ padding: '0.6rem', textAlign: 'left' }}>
                   {order.stock?.ticker || order.ticker ? (
-                    <Link to={`/stock/${order.stock?.ticker || order.ticker}`} style={{ color: '#fff', textDecoration: 'none' }}>
+                    <Link to={`/stock/${order.stock?.ticker || order.ticker}`} style={{ color: '#fff', textDecoration: 'none' }} onClick={e => e.stopPropagation()}>
                       {order.stock?.name || order.name || '-'}
                     </Link>
                   ) : (
@@ -269,6 +274,7 @@ const OrderBookPage: React.FC = () => {
   const [userHistory, setUserHistory] = useState<any[]>([]);
   const [allOrders, setAllOrders] = useState<any[]>([]);
   const [myOrders, setMyOrders] = useState<any[]>([]);
+  const [prefillOrder, setPrefillOrder] = useState<{ type: 'buy' | 'sell'; price?: number; quantity?: number } | null>(null);
   const [notice, setNotice] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
 
   useEffect(() => {
@@ -389,8 +395,14 @@ const OrderBookPage: React.FC = () => {
       <div style={{ display: 'inline-block', padding: '0.5rem 1rem', borderRadius: 8, background: notice.type === 'success' ? '#2ecc71' : notice.type === 'error' ? '#ff6b6b' : '#f1c40f', color: '#fff' }}>{notice.text}</div>
     </div>
   )}
-  {view === 'form' && <OrderForm ticker={ticker} tickers={tickers} setTicker={setTicker} />}
-  {view === 'orders' && <AllOrdersTable orders={allOrders.filter(o => o.status === 'open')} />}
+  {view === 'form' && <OrderForm ticker={ticker} tickers={tickers} setTicker={setTicker} prefill={prefillOrder} />}
+  {view === 'orders' && <AllOrdersTable orders={allOrders.filter(o => o.status === 'open')} onSelectOrder={(order) => {
+    // set the selected ticker, prefill the form fields and open the form view
+    const selectedTicker = order.stock?.ticker || order.ticker;
+    if (selectedTicker) setTicker(selectedTicker);
+    setPrefillOrder({ type: order.type === 'buy' ? 'sell' : 'buy', price: order.price ?? order.pricePerShare, quantity: order.quantity });
+    setView('form');
+  }} />}
   {view === 'history' && <HistoryTab history={userHistory} orders={myOrders} onCancel={handleCancelOrder} isAuth={!!localStorage.getItem('authToken')} />}
       </div>
     </section>

@@ -5,9 +5,10 @@ interface Props {
   ticker: string;
   tickers: { ticker: string; name: string }[];
   setTicker: (ticker: string) => void;
+  prefill?: { type: 'buy' | 'sell'; price?: number; quantity?: number } | null;
 }
 
-const OrderForm: React.FC<Props> = ({ ticker, tickers, setTicker }) => {
+const OrderForm: React.FC<Props> = ({ ticker, tickers, setTicker, prefill = null }) => {
   const [form, setForm] = useState({ type: 'buy', price: '', quantity: '' });
   const [formLoading, setFormLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -52,6 +53,17 @@ const OrderForm: React.FC<Props> = ({ ticker, tickers, setTicker }) => {
       setFormLoading(false);
     }
   };
+
+  // Apply prefill when provided (e.g. when user clicked an order in the book)
+  React.useEffect(() => {
+    if (prefill) {
+      setForm({
+        type: prefill.type || 'buy',
+        price: prefill.price != null ? String(prefill.price) : '',
+        quantity: prefill.quantity != null ? String(prefill.quantity) : '',
+      });
+    }
+  }, [prefill]);
 
   return (
     <section className="orderform-container" aria-labelledby="orderform-title">
