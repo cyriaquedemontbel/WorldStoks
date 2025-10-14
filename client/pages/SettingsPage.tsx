@@ -46,41 +46,48 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ user, onUpdateUser }
   };
 
   return (
-    <div style={{ maxWidth: '500px', margin: '0 auto', padding: '1rem' }}>
-      <h2>Paramètres du compte</h2>
-      {message && <div style={{ marginBottom: '1rem', color: 'green' }}>{message}</div>}
-
-      <label>Prénom</label>
-      <input value={firstName} onChange={e => setFirstName(e.target.value)} />
-
-      <label>Nom</label>
-      <input value={lastName} onChange={e => setLastName(e.target.value)} />
-
-      <label>Nom d'utilisateur / pseudo</label>
-      <input value={username} onChange={e => setUsername(e.target.value)} />
-
-      <label>Date de naissance</label>
-      <input type="date" value={birthDate} onChange={e => setBirthDate(e.target.value)} />
-
-      <label>Sexe / Genre</label>
-      <select value={gender} onChange={e => setGender(e.target.value)}>
-        <option value="">Sélectionnez</option>
-        <option value="male">Homme</option>
-        <option value="female">Femme</option>
-        <option value="other">Autre</option>
-      </select>
-
-      <hr style={{ margin: '1rem 0' }} />
-
-      <label>Nouveau mot de passe</label>
-      <input type="password" value={password} onChange={e => setPassword(e.target.value)} />
-
-      <label>Confirmer mot de passe</label>
-      <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} />
-
-      <button onClick={handleSave} disabled={loading} style={{ marginTop: '1rem' }}>
-        {loading ? 'Enregistrement...' : 'Enregistrer'}
-      </button>
-    </div>
+    <section className="settings-page-container" aria-labelledby="settings-title">
+      <header className="settings-title" id="settings-title">Compte&nbsp;<span style={{fontWeight:400,opacity:0.7}}>SET</span></header>
+      <div className="settings-card">
+        {message && <div className="settings-message">{message}</div>}
+        <div className="settings-group">
+          <label>Prénom</label>
+          <input value={firstName} onChange={e => setFirstName(e.target.value)} />
+        </div>
+        <div className="settings-group">
+          <label>Nom</label>
+          <input value={lastName} onChange={e => setLastName(e.target.value)} />
+        </div>
+        <div className="settings-group">
+          <label>Nom d'utilisateur / pseudo</label>
+          <input value={username} onChange={e => setUsername(e.target.value)} />
+        </div>
+        <div className="settings-group">
+          <label>Date de naissance</label>
+          <input type="date" value={birthDate} onChange={e => setBirthDate(e.target.value)} />
+        </div>
+        <div className="settings-group">
+          <label>Sexe / Genre</label>
+          <select value={gender} onChange={e => setGender(e.target.value)}>
+            <option value="">Sélectionnez</option>
+            <option value="male">Homme</option>
+            <option value="female">Femme</option>
+            <option value="other">Autre</option>
+          </select>
+        </div>
+        <hr className="settings-separator" />
+        <div className="settings-group">
+          <label>Nouveau mot de passe</label>
+          <input type="password" value={password} onChange={e => setPassword(e.target.value)} />
+        </div>
+        <div className="settings-group">
+          <label>Confirmer mot de passe</label>
+          <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} />
+        </div>
+        <button className="settings-save-btn" onClick={handleSave} disabled={loading}>
+          {loading ? 'Enregistrement...' : 'Enregistrer'}
+        </button>
+      </div>
+    </section>
   );
 };

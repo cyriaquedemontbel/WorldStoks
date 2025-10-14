@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { User, Stock, Page } from '../types';
 import { PortfolioChart } from '../components/PortfolioChart';
 
@@ -12,26 +12,32 @@ export const PortfolioPage = ({ user, stocks, onNavigate }: PortfolioPageProps) 
   if (!user) return <p>Chargement du portefeuille...</p>;
 
   const cash = user.cash ?? 0;
-  const portfolio = user.portfolio ?? {};
 
-  // Transformer le portefeuille en tableau avec valeur actuelle
-  const userHoldings = Object.entries(portfolio)
-    .map(([ticker, { quantity, price }]) => {
+  // ✅ Calcul des holdings avec valeur actuelle basée sur les prix du marché
+  const userHoldings = useMemo(() => {
+    return Object.entries(user.portfolio ?? {}).map(([ticker, holding]) => {
+      // On cast le holding pour que TS reconnaisse quantity et price
+      const { quantity, price } = holding as { quantity: number; price: number };
+
       const stockData = stocks.find(s => s.ticker === ticker);
       if (!stockData || quantity <= 0) return null;
 
       return {
         ...stockData,
         quantity,
-        currentValue: stockData.price * quantity, // valeur actuelle basée sur le prix du marché
-        purchasePrice: price, // prix d'achat initial
+        currentValue: stockData.price * quantity,
+        purchasePrice: price,
       };
     })
-    .filter((holding): holding is Stock & { quantity: number; currentValue: number; purchasePrice: number } => holding !== null)
+    .filter(
+      (h): h is Stock & { quantity: number; currentValue: number; purchasePrice: number } => h !== null
+    )
     .sort((a, b) => b.currentValue - a.currentValue);
+  }, [user.portfolio, stocks]);
 
-  const totalStockValue = userHoldings.reduce((acc, holding) => acc + holding.currentValue, 0);
-  const totalPortfolioValue = cash + totalStockValue;
+  const totalStockValue = useMemo(() => userHoldings.reduce((sum, h) => sum + h.currentValue, 0), [userHoldings]);
+  const totalPortfolioValue = useMemo(() => cash + totalStockValue, [cash, totalStockValue]);
+
   const userHasHoldings = userHoldings.length > 0;
 
   return (
@@ -40,20 +46,27 @@ export const PortfolioPage = ({ user, stocks, onNavigate }: PortfolioPageProps) 
         <h2>Mon Portefeuille</h2>
       </header>
 
+      {/* Graphique dynamique */}
       <PortfolioChart user={user} stocks={stocks} />
 
       <div className="portfolio-summary">
         <div className="summary-item total">
           <span className="summary-label">Valeur Totale du Portefeuille</span>
-          <span className="summary-value">{totalPortfolioValue.toLocaleString('fr-FR', { style: 'currency', currency: 'USD' })}</span>
+          <span className="summary-value">
+            {totalPortfolioValue.toLocaleString('fr-FR', { style: 'currency', currency: 'USD' })}
+          </span>
         </div>
         <div className="summary-item">
           <span className="summary-label">Valeur des Actions</span>
-          <span className="summary-value">{totalStockValue.toLocaleString('fr-FR', { style: 'currency', currency: 'USD' })}</span>
+          <span className="summary-value">
+            {totalStockValue.toLocaleString('fr-FR', { style: 'currency', currency: 'USD' })}
+          </span>
         </div>
         <div className="summary-item">
           <span className="summary-label">Liquidités</span>
-          <span className="summary-value">{cash.toLocaleString('fr-FR', { style: 'currency', currency: 'USD' })}</span>
+          <span className="summary-value">
+            {cash.toLocaleString('fr-FR', { style: 'currency', currency: 'USD' })}
+          </span>
         </div>
       </div>
 
@@ -65,18 +78,22 @@ export const PortfolioPage = ({ user, stocks, onNavigate }: PortfolioPageProps) 
               <div
                 key={holding.ticker}
                 className="holding-item"
-                onClick={() => onNavigate('detail', holding.ticker)}
                 role="button"
                 tabIndex={0}
-                onKeyPress={(e) => { if (e.key === 'Enter') onNavigate('detail', holding.ticker); }}
+                onClick={() => onNavigate('detail', holding.ticker)}
+                onKeyPress={e => { if (e.key === 'Enter') onNavigate('detail', holding.ticker); }}
               >
                 <div className="holding-item__info">
                   <span className="holding-item__name">{holding.name} ({holding.ticker})</span>
                   <span className="holding-item__quantity">{holding.quantity.toLocaleString('fr-FR')} actions</span>
                 </div>
                 <div className="holding-item__value">
-                  <span className="holding-item__total-value">{holding.currentValue.toLocaleString('fr-FR', { style: 'currency', currency: 'USD' })}</span>
-                  <span className="holding-item__price">@ {holding.purchasePrice.toLocaleString('fr-FR', { style: 'currency', currency: 'USD' })} / action</span>
+                  <span className="holding-item__total-value">
+                    {holding.currentValue.toLocaleString('fr-FR', { style: 'currency', currency: 'USD' })}
+                  </span>
+                  <span className="holding-item__price">
+                    @ {holding.purchasePrice.toLocaleString('fr-FR', { style: 'currency', currency: 'USD' })} / action
+                  </span>
                 </div>
               </div>
             ))}
@@ -84,7 +101,9 @@ export const PortfolioPage = ({ user, stocks, onNavigate }: PortfolioPageProps) 
         ) : (
           <div className="no-holdings">
             <p>Vous ne détenez actuellement aucune action.</p>
-            <button className="btn btn--primary" onClick={() => onNavigate('home')}>Explorer les marchés</button>
+            <button className="btn btn--primary" onClick={() => onNavigate('home')}>
+              Explorer les marchés
+            </button>
           </div>
         )}
       </div>

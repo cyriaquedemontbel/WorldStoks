@@ -51,43 +51,41 @@ export const FundsPage = ({ user, onUpdateFunds }: FundsPageProps) => {
     };
 
     return (
-        <section className="funds-page" aria-labelledby="funds-title">
-            <h2 id="funds-title">Gérer mes Fonds</h2>
-            <div className="funds-container">
-                <div className="current-balance">
-                    <span className="balance-label">Solde disponible :</span>
-                    <span className="balance-value">{user.cash.toLocaleString('fr-FR', { style: 'currency', currency: 'USD' })}</span>
+        <section className="funds-page-container" aria-labelledby="funds-title">
+            <header className="funds-title" id="funds-title">Fonds&nbsp;<span style={{fontWeight:400,opacity:0.7}}>FND</span></header>
+            <div className="funds-card">
+                <div className="funds-balance-group">
+                    <span className="funds-balance-label">Solde disponible :</span>
+                    <span className="funds-balance-value">{user.cash.toLocaleString('fr-FR', { style: 'currency', currency: 'USD' })}</span>
                 </div>
-                
+                <div className="funds-tabs">
+                    <button 
+                        type="button"
+                        onClick={() => setAction('deposit')} 
+                        className={`funds-tab-btn${action === 'deposit' ? ' active' : ''}`}
+                        aria-pressed={action === 'deposit'}
+                        disabled={isLoading}
+                    >
+                        Dépôt
+                    </button>
+                    <button 
+                        type="button"
+                        onClick={() => setAction('withdraw')} 
+                        className={`funds-tab-btn${action === 'withdraw' ? ' active' : ''}`}
+                        aria-pressed={action === 'withdraw'}
+                        disabled={isLoading}
+                    >
+                        Retrait
+                    </button>
+                </div>
                 <form className="funds-form" onSubmit={handleSubmit}>
-                    <div className="form-tabs">
-                        <button 
-                            type="button"
-                            onClick={() => setAction('deposit')} 
-                            className={`tab-btn ${action === 'deposit' ? 'tab-btn--active' : ''}`}
-                            aria-pressed={action === 'deposit'}
-                            disabled={isLoading}
-                        >
-                            Dépôt
-                        </button>
-                        <button 
-                            type="button"
-                            onClick={() => setAction('withdraw')} 
-                            className={`tab-btn ${action === 'withdraw' ? 'tab-btn--active' : ''}`}
-                            aria-pressed={action === 'withdraw'}
-                            disabled={isLoading}
-                        >
-                            Retrait
-                        </button>
-                    </div>
-
-                    <div className="form-group">
-                        <label htmlFor="amount" className="form-label">Montant</label>
+                    <div className="funds-form-group">
+                        <label htmlFor="amount" className="funds-form-label">Montant</label>
                         <input 
                             type="text" 
                             id="amount" 
                             name="amount"
-                            className="form-input"
+                            className="funds-form-input"
                             value={amount}
                             onChange={handleAmountChange}
                             placeholder="0.00"
@@ -95,12 +93,10 @@ export const FundsPage = ({ user, onUpdateFunds }: FundsPageProps) => {
                             disabled={isLoading}
                         />
                     </div>
-                    
-                    <button type="submit" className="btn btn--submit" disabled={isLoading}>
+                    <button type="submit" className="funds-submit-btn" disabled={isLoading}>
                         {isLoading ? 'En cours...' : (action === 'deposit' ? 'Déposer des fonds' : 'Retirer des fonds')}
                     </button>
-                    
-                    {message && <p className="form-message" aria-live="polite">{message}</p>}
+                    {message && <p className="funds-form-message" aria-live="polite">{message}</p>}
                 </form>
             </div>
         </section>

@@ -1,0 +1,429 @@
+/* --- Crypto Detail Page --- */
+.crypto-detail-page-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 70vh;
+  padding: 2rem 0;
+  width: 90%;
+  max-width: 1100px;
+  margin: 0 auto 2rem auto;
+  padding-left: 2rem;
+  padding-right: 2rem;
+  width: 90%;
+  max-width: 1100px;
+  margin: 0 auto 2rem auto;
+  padding-left: 2rem;
+  padding-right: 2rem;
+}
+.crypto-card {
+  background: #181818;
+  border-radius: 1rem;
+  box-shadow: 0 1px 8px rgba(0,0,0,0.12);
+  padding: 2rem 2rem 1.7rem 2rem;
+  max-width: none;
+  width: 100%;
+  border: 1px solid #222;
+  color: #f3f3f3;
+}
+.crypto-back-btn {
+  background: none;
+  border: none;
+  color: var(--primary, #007bff);
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.2rem;
+  cursor: pointer;
+}
+.crypto-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+.crypto-logo-ticker {
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+}
+.crypto-logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #d1d5db;
+}
+.crypto-logo-circle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #222;
+}
+.crypto-name {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 0.2rem;
+  color: #fff;
+}
+.crypto-ticker {
+  font-size: 1rem;
+  color: #666;
+  font-weight: 500;
+}
+.crypto-price-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+.crypto-price {
+  font-size: 1.45rem;
+  font-weight: 700;
+  margin-bottom: 0.2rem;
+  color: #fff;
+}
+.crypto-change {
+  font-size: 1rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: #222;
+}
+.crypto-change--positive {
+  color: #2e7d32;
+}
+.crypto-change--negative {
+  color: #c62828;
+}
+.crypto-chart-panel {
+  margin-bottom: 1.5rem;
+}
+.crypto-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.7rem;
+}
+.crypto-stat {
+  background: #f3f4f6;
+  border-radius: 0.6rem;
+  padding: 0.6rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  border: 1px solid #e5e7eb;
+}
+.crypto-stat-label {
+  font-size: 0.95rem;
+  color: #666;
+  margin-bottom: 0.2rem;
+}
+.crypto-stat-value {
+  font-size: 1.08rem;
+  font-weight: 700;
+  color: #222;
+}
+.crypto-trade-panel {
+  margin-bottom: 1.5rem;
+}
+.crypto-trade-actions {
+  display: flex;
+  gap: 1.2rem;
+  margin-top: 0.7rem;
+}
+.crypto-btn {
+  flex: 1;
+  padding: 0.7rem 0;
+  font-size: 1.08rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  background: #e5e7eb;
+  color: #222;
+}
+.crypto-btn--buy {
+  background: #e0f2e9;
+  color: #2e7d32;
+}
+.crypto-btn--sell {
+  background: #fbe9e7;
+  color: #c62828;
+}
+.crypto-btn:disabled {
+  background: #f3f4f6;
+  color: #aaa;
+  cursor: not-allowed;
+}
+.crypto-link-btn {
+  background: none;
+  border: none;
+  color: #007bff;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.crypto-no-available {
+  color: #d32f2f;
+  margin-top: 0.5rem;
+}
+.crypto-description {
+  margin-top: 1.2rem;
+  background: #111;
+  border-radius: 0.6rem;
+  padding: 1rem 1.2rem;
+  border: 1px solid #222;
+  color: #f3f3f3;
+}
+.crypto-description h3 {
+  margin-bottom: 0.5rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+.funds-form-message--error {
+  color: #d32f2f !important;
+}
+/* --- Funds Page --- */
+.funds-page-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 70vh;
+  padding: 2.5rem 0 2rem 0;
+  width: 90%;
+  max-width: 700px;
+  margin: 0 auto 2rem auto;
+  border-radius: 1rem;
+  background: #181818;
+  box-shadow: 0 1px 8px rgba(0,0,0,0.12);
+  padding-left: 2rem;
+  padding-right: 2rem;
+}
+
+.funds-card {
+  background: var(--background-light, #fff);
+  border-radius: 1rem;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+  padding: 2rem 2.5rem;
+  max-width: 420px;
+  width: 100%;
+}
+
+.funds-title {
+  margin-bottom: 1.2rem;
+  font-size: 1.3rem;
+  font-weight: 700;
+  text-align: left;
+  letter-spacing: 0.04em;
+  color: #fff;
+}
+
+.funds-balance-group {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.3rem;
+  font-size: 1.1rem;
+}
+.funds-balance-label {
+  color: var(--text-secondary, #444);
+}
+.funds-balance-value {
+  font-weight: 600;
+  color: var(--primary, #007bff);
+}
+
+.funds-tabs {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.2rem;
+}
+.funds-tab-btn {
+  flex: 1;
+  padding: 0.6rem 0;
+  font-size: 1.05rem;
+  font-weight: 500;
+  background: #eee;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.funds-tab-btn.active {
+  background: var(--primary, #007bff);
+  color: #fff;
+}
+.funds-tab-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.funds-form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1.1rem;
+}
+.funds-form-label {
+  font-size: 1rem;
+  margin-bottom: 0.3rem;
+  color: var(--text-secondary, #444);
+}
+.funds-form-input {
+  padding: 0.5rem 0.7rem;
+  border-radius: 0.4rem;
+  border: 1px solid var(--border-color, #ccc);
+  font-size: 1rem;
+  background: var(--background-light, #fff);
+}
+
+.funds-submit-btn {
+  width: 100%;
+  padding: 0.7rem 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  background: var(--primary, #007bff);
+  color: #fff;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  margin-top: 1.2rem;
+  transition: background 0.2s;
+}
+.funds-submit-btn:disabled {
+  background: #aaa;
+  cursor: not-allowed;
+}
+
+.funds-form-message {
+  margin-top: 1rem;
+  color: #1a7f37;
+  font-weight: 500;
+  text-align: center;
+}
+/* --- Settings Page --- */
+.settings-page-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 70vh;
+  padding: 2.5rem 0 2rem 0;
+  width: 90%;
+  max-width: 700px;
+  margin: 0 auto 2rem auto;
+  border-radius: 1rem;
+  background: #181818;
+  box-shadow: 0 1px 8px rgba(0,0,0,0.12);
+  padding-left: 2rem;
+  padding-right: 2rem;
+}
+
+.settings-card {
+  background: var(--background-light, #fff);
+  border-radius: 1rem;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+  padding: 2rem 2.5rem;
+  max-width: 420px;
+  width: 100%;
+}
+
+.settings-title {
+  margin-bottom: 1.2rem;
+  font-size: 1.3rem;
+  font-weight: 700;
+  text-align: left;
+  letter-spacing: 0.04em;
+  color: #fff;
+}
+
+.settings-message {
+  margin-bottom: 1rem;
+  color: #1a7f37;
+  font-weight: 500;
+  text-align: center;
+}
+
+.settings-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1.1rem;
+}
+.settings-group label {
+  font-size: 1rem;
+  margin-bottom: 0.3rem;
+  color: var(--text-secondary, #444);
+}
+.settings-group input,
+.settings-group select {
+  padding: 0.5rem 0.7rem;
+  border-radius: 0.4rem;
+  border: 1px solid var(--border-color, #ccc);
+  font-size: 1rem;
+  background: var(--background-light, #fff);
+}
+
+.settings-separator {
+  margin: 1.5rem 0;
+  border: none;
+  border-top: 1px solid var(--border-color, #eee);
+}
+
+.settings-save-btn {
+  width: 100%;
+  padding: 0.7rem 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  background: var(--primary, #007bff);
+  color: #fff;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  margin-top: 1.2rem;
+  transition: background 0.2s;
+}
+.settings-save-btn:disabled {
+  background: #aaa;
+  cursor: not-allowed;
+}
+/* index.css */
+body {
+  margin: 0;
+  font-family: 'Inter', Arial, sans-serif;
+  background: #111;
+  color: #f3f3f3;
+}
+
+.page-container {
+  width: 90%;
+  max-width: 1100px;
+  margin: 5% auto 2rem auto;
+  padding-left: 2rem;
+  padding-right: 2rem;
+  min-height: 80vh;
+}
+
+/* Empêche le chevauchement des chiffres trop longs dans le portefeuille */
+.portfolio-summary .summary-value {
+  word-break: break-all;
+  white-space: normal;
+  display: inline-block;
+  max-width: 100%;
+}
+
+.main-footer {
+  background: var(--background-light);
+  color: var(--text-secondary);
+  text-align: center;
+  padding: 1.5rem 0 1rem 0;
+  border-top: 1px solid var(--border-color);
+  margin-top: 2rem;
+  font-size: 1rem;
+  width: 90%;
+  max-width: 1100px;
+  margin: 2rem auto 0 auto;
+  padding-left: 2rem;
+  padding-right: 2rem;
+}

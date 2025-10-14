@@ -15,6 +15,24 @@ interface LoginPageProps {
 }
 
 export const LoginPage = ({ onLogin, onSignUp }: LoginPageProps) => {
+  // Ajout d'une fonction de login par défaut si non fournie
+  const [loginResult, setLoginResult] = useState<string | null>(null);
+  async function defaultOnLogin(email: string, password: string) {
+    setLoginResult(null);
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if (data.token) {
+      localStorage.setItem('authToken', data.token);
+      setLoginResult('Connexion réussie ! Token : ' + data.token);
+      // Redirection ou autre action possible ici
+    } else {
+      setLoginResult(data.message || 'Erreur de connexion');
+    }
+  }
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -28,7 +46,7 @@ export const LoginPage = ({ onLogin, onSignUp }: LoginPageProps) => {
 
     try {
       if (mode === 'login') {
-        await onLogin(email, password);
+        await (onLogin || defaultOnLogin)(email, password);
       } else {
         const firstName = formData.get('firstName') as string;
         const lastName = formData.get('lastName') as string;
@@ -214,6 +232,11 @@ export const LoginPage = ({ onLogin, onSignUp }: LoginPageProps) => {
             {isLoading ? 'Chargement...' : mode === 'login' ? 'Se connecter' : 'Créer un compte'}
           </button>
         </form>
+        {loginResult && (
+          <div style={{ marginTop: '1rem', color: loginResult.startsWith('Connexion') ? 'green' : 'red' }}>
+            {loginResult}
+          </div>
+        )}
       </div>
     </div>
   );

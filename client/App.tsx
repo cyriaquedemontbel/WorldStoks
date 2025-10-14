@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { Header } from './components/Header';
 import { HomePage } from './pages/HomePage';
 import { StockDetailPage } from './pages/StockDetailPage';
@@ -10,24 +11,24 @@ import { FundsPage } from './pages/FundsPage';
 import { AdminPage } from './pages/AdminPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { TradeModal } from './components/TradeModal';
+import OrderBookPage from './pages/OrderBookPage';
+import { Stock, User, Transaction, Page } from './types';
 import * as api from './api';
-import { Stock, User, Page, Transaction } from './types';
-
 
 const guestUser: User = {
+  id: 'guest',
+  email: '',
+  cash: 0,
+  portfolio: {},
   isLoggedIn: false,
   isAdmin: false,
-  email: '',
   username: '',
   firstName: '',
   lastName: '',
   birthDate: '',
   gender: '',
   consent: false,
-  cash: 0,
-  portfolio: {},
 };
-
 
 type TradeModalState = {
   isOpen: boolean;
@@ -35,24 +36,31 @@ type TradeModalState = {
   type: 'buy' | 'sell' | null;
 };
 
-export const App: React.FC = () => {
+export const AppContent: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [user, setUser] = useState<User>(guestUser);
   const [stocks, setStocks] = useState<Stock[]>([]);
   const [history, setHistory] = useState<Transaction[]>([]);
-  const [currentPage, setCurrentPage] = useState<Page>('home');
-  const [selectedTicker, setSelectedTicker] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [tradeModalState, setTradeModalState] = useState<TradeModalState>({ isOpen: false, stock: null, type: null });
+
+  // Détecte la page courante pour Header
+  const currentPage: Page = (() => {
+    const path = location.pathname.split('/')[1];
+    if (!path || path === '') return 'home';
+    if (path === 'stock') return 'home';
+    return path as Page;
+  })();
 
   const showMessage = (msg: string) => {
     setErrorMessage(msg);
     setTimeout(() => setErrorMessage(''), 3000);
   };
 
-  // ===================================
-  // Charger stocks + user + portfolio
-  // ===================================
+  // Charger stocks + user + history
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
@@ -81,95 +89,76 @@ export const App: React.FC = () => {
     loadData();
   }, []);
 
-  // ===================================
-  // Auth
-  // ===================================
-const handleLogin = async (email: string, pass: string) => {
-  try {
-    const { token, user: userData } = await api.apiLogin(email, pass);
-    localStorage.setItem('authToken', token);
+  const updateStockInState = useCallback((updatedStock: Stock) => {
+    setStocks(prev => prev.map(s => s?.ticker === updatedStock?.ticker ? updatedStock : s));
+  }, []);
 
-    setUser({
-      ...userData,
-      isLoggedIn: true,
-      isAdmin: userData.isAdmin ?? false,
-      cash: userData.cash ?? 0,
-      portfolio: userData.portfolio ?? {},
-    });
+  // Auth functions
+  const handleLogin = async (email: string, pass: string) => {
+    try {
+      const { token, user: userData } = await api.apiLogin(email, pass);
+      localStorage.setItem('authToken', token);
 
-    const historyData = await api.apiFetchHistory();
-    setHistory(historyData.filter(Boolean));
+      setUser({
+        ...userData,
+        isLoggedIn: true,
+        isAdmin: userData.isAdmin ?? false,
+        cash: userData.cash ?? 0,
+        portfolio: userData.portfolio ?? {},
+      });
 
-    setCurrentPage(userData.isAdmin ? 'admin' : 'home');
-    showMessage(`Bienvenue, ${userData.email} !`);
-  } catch (err) {
-    showMessage(err instanceof Error ? err.message : 'Erreur de connexion.');
-  }
-};
+      const historyData = await api.apiFetchHistory();
+      setHistory(historyData.filter(Boolean));
 
-const handleSignUp = async (data: {
-  email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-  username: string;
-  birthDate: string;
-  gender?: string;
-  consent: boolean;
-}) => {
-  try {
-    // Appel à l'API avec tous les champs
-    const { token, user: userData } = await api.apiSignUp(data);
-    localStorage.setItem('authToken', token);
+      navigate(userData.isAdmin ? '/admin' : '/');
+      showMessage(`Bienvenue, ${userData.email} !`);
+    } catch (err) {
+      showMessage(err instanceof Error ? err.message : 'Erreur de connexion.');
+    }
+  };
 
-    setUser({
-      ...userData,
-      isLoggedIn: true,
-      isAdmin: userData.isAdmin ?? false,
-      cash: userData.cash ?? 0,
-      portfolio: userData.portfolio ?? {},
-    });
+  const handleSignUp = async (data: {
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    username: string;
+    birthDate: string;
+    gender?: string;
+    consent: boolean;
+  }) => {
+    try {
+      const { token, user: userData } = await api.apiSignUp(data);
+      localStorage.setItem('authToken', token);
 
-    const historyData = await api.apiFetchHistory();
-    setHistory(historyData.filter(Boolean));
+      setUser({
+        ...userData,
+        isLoggedIn: true,
+        isAdmin: userData.isAdmin ?? false,
+        cash: userData.cash ?? 0,
+        portfolio: userData.portfolio ?? {},
+      });
 
-    setCurrentPage(userData.isAdmin ? 'admin' : 'home');
-    showMessage('Inscription réussie !');
-  } catch (err) {
-    showMessage(err instanceof Error ? err.message : "Erreur d'inscription.");
-  }
-};
+      const historyData = await api.apiFetchHistory();
+      setHistory(historyData.filter(Boolean));
 
+      navigate(userData.isAdmin ? '/admin' : '/');
+      showMessage('Inscription réussie !');
+    } catch (err) {
+      showMessage(err instanceof Error ? err.message : "Erreur d'inscription.");
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('authToken');
     setUser(guestUser);
     setHistory([]);
-    setCurrentPage('home');
+    navigate('/');
   };
 
-  // ===================================
-  // Navigation
-  // ===================================
-  const handleNavigate = (page: Page, ticker?: string) => {
-    setSelectedTicker(page === 'detail' ? ticker || null : null);
-    setCurrentPage(page);
-  };
-
-  const handleStockSelect = (ticker: string) => {
-    setSelectedTicker(ticker);
-    setCurrentPage('detail');
-  };
-
-  const updateStockInState = useCallback((updatedStock: Stock) => {
-    setStocks(prev => prev.map(s => s?.ticker === updatedStock?.ticker ? updatedStock : s));
-  }, []);
-
-  // ===================================
-  // Trading
-  // ===================================
+  // Trading functions
   const handleTrade = async (
-    tradeFn: () => Promise<{ success: boolean; user: User; stock: Stock; portfolio?: Record<string, { quantity: number; price: number }> }>,
+    tradeFn: () => Promise<{ success: boolean; user: User; stock: Stock }>,
     successMsg: string
   ) => {
     try {
@@ -203,12 +192,6 @@ const handleSignUp = async (data: {
     }
   };
 
-  const handleBuyStock = (ticker: string, quantity: number) =>
-    handleTrade(() => api.apiBuyStock(ticker, quantity), `${quantity} action(s) de ${ticker} achetée(s) !`);
-
-  const handleSellStock = (ticker: string, quantity: number) =>
-    handleTrade(() => api.apiSellStock(ticker, quantity), `${quantity} action(s) de ${ticker} vendue(s) !`);
-
   const handleOpenTradeModal = (stock: Stock, type: 'buy' | 'sell') =>
     setTradeModalState({ isOpen: true, stock, type });
 
@@ -216,13 +199,14 @@ const handleSignUp = async (data: {
     setTradeModalState({ isOpen: false, stock: null, type: null });
 
   const handleConfirmTrade = (ticker: string, quantity: number) => {
-    if (tradeModalState.type === 'buy') handleBuyStock(ticker, quantity);
-    else if (tradeModalState.type === 'sell') handleSellStock(ticker, quantity);
+    if (!tradeModalState.stock || !tradeModalState.type) return;
+    if (tradeModalState.type === 'buy')
+      handleTrade(() => api.apiBuyStock(ticker, quantity), `${quantity} action(s) achetée(s) !`);
+    else
+      handleTrade(() => api.apiSellStock(ticker, quantity), `${quantity} action(s) vendue(s) !`);
   };
 
-  // ===================================
   // Admin / Stock management
-  // ===================================
   const handleAddStock = async (stock: Stock) => {
     try {
       const newStock = await api.apiAddStock(stock);
@@ -257,6 +241,7 @@ const handleSignUp = async (data: {
     }
   };
 
+  // Update funds
   const handleUpdateFunds = async (amount: number, type: 'deposit' | 'withdraw') => {
     try {
       await api.apiUpdateFunds(amount, type);
@@ -265,8 +250,8 @@ const handleSignUp = async (data: {
       setUser({
         ...updatedUser,
         isLoggedIn: true,
-        cash: updatedUser.cash ?? 0,
         isAdmin: updatedUser.isAdmin ?? false,
+        cash: updatedUser.cash ?? 0,
         portfolio: updatedUser.portfolio ?? {},
       });
       return `${amount.toLocaleString('fr-FR', { style: 'currency', currency: 'USD' })} ${type === 'deposit' ? 'déposés' : 'retirés'} !`;
@@ -276,48 +261,39 @@ const handleSignUp = async (data: {
     }
   };
 
-  // ===================================
-  // Page rendering
-  // ===================================
-  const renderPage = () => {
-    if (isLoading) return <div className="loader-container"><div className="loader"></div></div>;
-
-    switch (currentPage) {
-      case 'home':
-        return <HomePage stocks={stocks.filter(Boolean)} user={user} onStockSelect={handleStockSelect} onNavigate={handleNavigate} onOpenTradeModal={handleOpenTradeModal} />;
-      case 'detail': {
-        const stock = stocks.find(s => s?.ticker === selectedTicker);
-        return stock ? <StockDetailPage stock={stock} user={user} onBack={() => setCurrentPage('home')} onNavigate={handleNavigate} onOpenTradeModal={handleOpenTradeModal} /> : <p>Action non trouvée.</p>;
-      }
-      case 'login':
-        return <LoginPage onLogin={handleLogin} onSignUp={handleSignUp} />;
-      case 'about':
-        return <AboutPage />;
-      case 'portfolio':
-        return <PortfolioPage user={user} stocks={stocks.filter(Boolean)} onNavigate={handleNavigate} />;
-      case 'history':
-        return <HistoryPage history={history.filter(Boolean)} />;
-      case 'funds':
-        return <FundsPage user={user} onUpdateFunds={handleUpdateFunds} />;
-      case 'admin':
-        return user.isAdmin ? <AdminPage stocks={stocks.filter(Boolean)} onAddStock={handleAddStock} onUpdateStock={handleUpdateStock} onDeleteStock={handleDeleteStock} /> : <p>Accès non autorisé.</p>;
-      case 'settings':
-        return <SettingsPage user={user} onUpdateUser={setUser} />;
-      default:
-        return <HomePage stocks={stocks.filter(Boolean)} user={user} onStockSelect={handleStockSelect} onNavigate={handleNavigate} onOpenTradeModal={handleOpenTradeModal} />;
-    }
-  };
+  if (isLoading) return <div className="loader-container"><div className="loader"></div></div>;
 
   return (
-    <div className="App">
-      <Header user={user} currentPage={currentPage} onNavigate={handleNavigate} onLogout={handleLogout} />
-      <main className="main-content">
-        {errorMessage && <div className="error-toast">{errorMessage}</div>}
-        {renderPage()}
-      </main>
+    <>
+      <Header
+        user={user}
+        currentPage={currentPage}
+        onNavigate={(page: Page) => navigate(page === 'home' ? '/' : `/${page}`)}
+        onLogout={handleLogout}
+      />
+
+      {errorMessage && <div className="error-toast">{errorMessage}</div>}
+
+      <Routes>
+        <Route path="/" element={<HomePage stocks={stocks} user={user} onStockSelect={(ticker) => navigate(`/stock/${ticker}`)} onOpenTradeModal={handleOpenTradeModal} onNavigate={(page) => navigate(page === 'home' ? '/' : `/${page}`)} />} />
+        <Route path="/stock/:ticker" element={<StockDetailPage stocks={stocks} user={user} onOpenTradeModal={handleOpenTradeModal} />} />
+        <Route path="/orderbook/:ticker" element={<OrderBookPage />} />
+        <Route path="/login" element={<LoginPage onLogin={handleLogin} onSignUp={handleSignUp} />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/portfolio" element={<PortfolioPage stocks={stocks} user={user} onNavigate={(page, ticker) => ticker ? navigate(`/stock/${ticker}`) : navigate(page === 'home' ? '/' : `/${page}`)} />} />
+        <Route path="/history" element={<HistoryPage history={history} />} />
+        <Route path="/funds" element={<FundsPage user={user} onUpdateFunds={handleUpdateFunds} />} />
+        <Route path="/admin" element={user.isAdmin ? <AdminPage stocks={stocks} onAddStock={handleAddStock} onUpdateStock={handleUpdateStock} onDeleteStock={handleDeleteStock} /> : <Navigate to="/" />} />
+        <Route path="/settings" element={<SettingsPage user={user} onUpdateUser={setUser} />} />
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
+
       {tradeModalState.isOpen && tradeModalState.stock && tradeModalState.type && (
         <TradeModal user={user} stock={tradeModalState.stock} type={tradeModalState.type} onClose={handleCloseTradeModal} onConfirm={handleConfirmTrade} />
       )}
-    </div>
+    </>
   );
 };
+
+// App root — PAS de Router ici !
+export const App: React.FC = () => <AppContent />;

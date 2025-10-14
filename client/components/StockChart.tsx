@@ -34,7 +34,7 @@ export const StockChart = ({ stock }: { stock: Stock }) => {
     const [hoveredData, setHoveredData] = useState<{ point: ChartPoint, svgX: number, svgY: number, clientX: number, clientY: number } | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 
-    const change = stock.change ?? 0;
+    const change = stock.price - (stock.previousPrice ?? stock.price);
     const history = stock.history ?? []; // <- valeur par défaut pour éviter les erreurs
 
     const isPositive = change >= 0;

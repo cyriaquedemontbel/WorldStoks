@@ -23,7 +23,15 @@ router.post('/', auth, async (req, res) => {
             return res.status(400).json({ message: 'Données invalides' });
         }
 
-        const stock = new Stock({ ticker, name, price });
+        const stock = new Stock({ 
+            ticker, 
+            name, 
+            price, 
+            priceAtOpen: price, // prix d'ouverture initial
+            change: 0,
+            changePercent: 0
+        });
+
         await stock.save();
         res.json(stock);
     } catch (err) {
@@ -36,8 +44,10 @@ router.post('/', auth, async (req, res) => {
 router.put('/:id', auth, async (req, res) => {
     try {
         if (!req.user.isAdmin) return res.status(403).json({ message: 'Accès refusé' });
+
         const stock = await Stock.findByIdAndUpdate(req.params.id, req.body, { new: true });
         if (!stock) return res.status(404).json({ message: 'Stock introuvable' });
+
         res.json(stock);
     } catch (err) {
         console.error('Erreur mise à jour stock:', err);
@@ -49,8 +59,10 @@ router.put('/:id', auth, async (req, res) => {
 router.delete('/:id', auth, async (req, res) => {
     try {
         if (!req.user.isAdmin) return res.status(403).json({ message: 'Accès refusé' });
+
         const stock = await Stock.findByIdAndDelete(req.params.id);
         if (!stock) return res.status(404).json({ message: 'Stock introuvable' });
+
         res.json({ message: 'Stock supprimé' });
     } catch (err) {
         console.error('Erreur suppression stock:', err);
@@ -58,19 +70,35 @@ router.delete('/:id', auth, async (req, res) => {
     }
 });
 
-// 🧠 Ancienne version supprimée : updateMarketWithAI() modifiait les prix
-
-// 🔹 Nouvelle route — Actualiser le marché sans changer les prix
+// 🔹 POST — Actualiser le marché et calculer les variations
 router.post('/update-market', async (req, res) => {
     try {
-        // On se contente de recharger les stocks depuis la base, sans modification
         const stocks = await Stock.find();
+
+        const updatedStocks = await Promise.all(stocks.map(async (stock) => {
+            // Prix de référence : priceAtOpen
+            const basePrice = stock.priceAtOpen ?? stock.price;
+
+            // ⚡ Simulation d’évolution du prix pour rendre le pourcentage dynamique
+            const newPrice = stock.price * (1 + (Math.random() - 0.5) * 0.02); // ±1% aléatoire
+            stock.price = Number(newPrice.toFixed(2));
+
+            const change = Number((stock.price - basePrice).toFixed(2));
+            const changePercent = basePrice > 0 ? Number(((change / basePrice) * 100).toFixed(2)) : 0;
+
+            // Mise à jour des champs persistants
+            stock.priceAtOpen = stock.priceAtOpen ?? stock.price;
+            stock.change = change;
+            stock.changePercent = changePercent;
+
+            await stock.save();
+            return stock;
+        }));
 
         res.json({
             success: true,
-            updated: stocks.length,
-            message: "Marché actualisé sans modification de prix",
-            stocks,
+            updated: updatedStocks.length,
+            stocks: updatedStocks,
         });
     } catch (err) {
         console.error('Erreur update-market:', err);

@@ -1,4 +1,4 @@
-import { Stock, User, Transaction } from './types';
+import { Stock, User, Transaction, Order } from './types';
 
 const API_BASE_URL = "http://localhost:5000/api";
 
@@ -234,4 +234,18 @@ export const apiUpdateMarketWithAI = async (): Promise<Stock[]> => {
         headers: { 'Content-Type': 'application/json' }
     });
     return handleResponse(response);
+};
+
+export const apiFetchMyOrders = async (): Promise<Order[]> => {
+    const token = getToken();
+    if (!token) return [];
+    try {
+        const response = await fetch(`${API_BASE_URL}/orders/my`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await handleResponse(response);
+        return data.orders || [];
+    } catch {
+        return [];
+    }
 };

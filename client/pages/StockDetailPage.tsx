@@ -1,41 +1,74 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Stock, Page, User } from '../types';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Stock, User, Page } from '../types';
 import { ChangeIcon } from '../components/ChangeIcon';
 import { StockChart } from '../components/StockChart';
 
 interface StockDetailPageProps {
-  stock: Stock;
+  stocks: Stock[];
   user: User;
-  onBack: () => void;
-  onNavigate: (page: Page) => void;
-  onOpenTradeModal: (stock: Stock, type: 'buy' | 'sell', onTradeComplete: () => void) => void;
+  onOpenTradeModal: (stock: Stock, type: 'buy' | 'sell', onTradeComplete?: () => void) => void;
 }
 
-export const StockDetailPage = ({
-  stock,
-  user,
-  onBack,
-  onNavigate,
-  onOpenTradeModal,
-}: StockDetailPageProps) => {
-  const [localStock, setLocalStock] = useState<Stock>(stock);
+export const StockDetailPage: React.FC<StockDetailPageProps> = ({ stocks, user, onOpenTradeModal }) => {
+  const { ticker } = useParams<{ ticker: string }>();
+  const navigate = useNavigate();
+  const stock = stocks.find(s => s.ticker === ticker);
+
+  const [localStock, setLocalStock] = useState<Stock | undefined>(stock);
   const [priceDirection, setPriceDirection] = useState<'up' | 'down' | 'stable'>('stable');
   const prevPriceRef = useRef<number | undefined>(undefined);
 
-  // Mise à jour du stock si props change
   useEffect(() => {
-    setLocalStock(stock);
+    if (stock) setLocalStock(stock);
   }, [stock]);
 
-  // Animation direction du prix
+  // Animation de la direction du prix
   useEffect(() => {
+    if (!localStock) return;
     if (prevPriceRef.current !== undefined && prevPriceRef.current !== localStock.price) {
       setPriceDirection(localStock.price > prevPriceRef.current ? 'up' : 'down');
       const timer = setTimeout(() => setPriceDirection('stable'), 500);
       return () => clearTimeout(timer);
     }
     prevPriceRef.current = localStock.price;
-  }, [localStock.price]);
+  }, [localStock?.price]);
+
+  if (!localStock) return <p>Stock non trouvé.</p>;
+
+  const handleAction = (type: 'buy' | 'sell') => {
+    if (user.isLoggedIn) {
+      onOpenTradeModal(localStock, type, async () => {
+        // Refresh stock après trade
+        try {
+          const res = await fetch(`http://localhost:5000/api/stocks/${localStock._id}`);
+          if (!res.ok) throw new Error('Erreur récupération stock');
+          const updatedStock = await res.json();
+          setLocalStock(updatedStock);
+        } catch (err) {
+          console.error(err);
+        }
+      });
+    } else {
+      navigate('/login');
+    }
+  };
+
+  const price = localStock.price ?? 0;
+  const previousPrice = prevPriceRef.current ?? price;
+  const change = price - previousPrice;
+  const changePercent = previousPrice > 0 ? (change / previousPrice) * 100 : 0;
+  const isPositive = change >= 0;
+  const availableShares = localStock.circulatingSupply ?? 0;
+
+  const userHolding = user.portfolio?.[localStock.ticker];
+  const userShares = userHolding && typeof (userHolding as any).quantity === 'number'
+    ? (userHolding as any).quantity
+    : 0;
+
+  const formattedPrice = price.toLocaleString('fr-FR', { style: 'currency', currency: 'USD' });
+  const formattedChange = `${isPositive ? '+' : ''}${change.toFixed(2)}`;
+  const formattedChangePercent = `${isPositive ? '+' : ''}${changePercent.toFixed(2)}%`;
 
   const getPriceClass = () => {
     switch (priceDirection) {
@@ -45,42 +78,14 @@ export const StockDetailPage = ({
     }
   };
 
-  const handleTradeComplete = async () => {
-    // Recharge le stock depuis le backend après un achat/vente
-    try {
-      const res = await fetch(`http://localhost:5000/api/stocks/${localStock._id}`);
-      if (!res.ok) throw new Error('Erreur récupération stock');
-      const updatedStock = await res.json();
-      setLocalStock(updatedStock);
-    } catch (err) {
-      console.error('Impossible de mettre à jour le stock après trade', err);
-    }
-  };
-
-  const handleAction = (type: 'buy' | 'sell') => {
-    if (user.isLoggedIn) {
-      onOpenTradeModal(localStock, type, handleTradeComplete);
-    } else {
-      onNavigate('login');
-    }
-  };
-
-  const price = localStock.price ?? 0;
-  const change = localStock.change ?? 0;
-  const changePercent = localStock.changePercent ?? 0;
-  const isPositive = change >= 0;
-  const availableShares = localStock.circulatingSupply ?? 0;
-  const userShares = user.portfolio?.[localStock.ticker] ?? 0;
-
-  const formattedPrice = price.toLocaleString('fr-FR', { style: 'currency', currency: 'USD' });
-  const formattedChange = `${isPositive ? '+' : ''}${change.toFixed(2)}`;
-  const formattedChangePercent = `${isPositive ? '+' : ''}${changePercent.toFixed(2)}%`;
-
   return (
     <section className="stock-detail-page" aria-labelledby="stock-detail-title">
-      <button onClick={onBack} className="btn btn--back">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ transform: 'rotate(180deg)' }}>
-          <path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <button onClick={() => navigate('/')} className="btn btn--back">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+             xmlns="http://www.w3.org/2000/svg" style={{ transform: 'rotate(180deg)' }}>
+          <path d="M5 12H19M19 12L13 6M19 12L13 18"
+                stroke="currentColor" strokeWidth="2"
+                strokeLinecap="round" strokeLinejoin="round" />
         </svg>
         <span>Retour aux marchés</span>
       </button>
@@ -94,7 +99,7 @@ export const StockDetailPage = ({
         <div className={`stock-detail-page__change ${isPositive ? 'stock-detail-page__change--positive' : 'stock-detail-page__change--negative'}`}>
           <ChangeIcon change={change} />
           <span>{formattedChange} ({formattedChangePercent})</span>
-          <span className="sr-only">sur les dernières 24 heures</span>
+          <span className="sr-only">variation depuis la dernière mise à jour</span>
         </div>
       </header>
 
@@ -107,27 +112,11 @@ export const StockDetailPage = ({
         <h3>Passer un ordre</h3>
         {user.isLoggedIn ? (
           <div className="trade-actions">
-            <button
-              className="btn btn--buy"
-              onClick={() => handleAction('buy')}
-              disabled={user.cash < price || availableShares < 1}
-            >
-              Acheter
-            </button>
-            <button
-              className="btn btn--sell"
-              onClick={() => handleAction('sell')}
-              disabled={userShares < 1}
-            >
-              Vendre
-            </button>
+            <button className="btn btn--buy" onClick={() => handleAction('buy')} disabled={(user.cash ?? 0) < price || availableShares < 1}>Acheter</button>
+            <button className="btn btn--sell" onClick={() => handleAction('sell')} disabled={userShares < 1}>Vendre</button>
           </div>
         ) : (
-          <p>
-            Veuillez vous{' '}
-            <button className="link-button" onClick={() => onNavigate('login')}>connecter</button>{' '}
-            pour trader.
-          </p>
+          <p>Veuillez vous <button className="link-button" onClick={() => navigate('/login')}>connecter</button> pour trader.</p>
         )}
         {availableShares < 1 && <p className="no-available-shares">Aucune action disponible à l'achat</p>}
       </div>
