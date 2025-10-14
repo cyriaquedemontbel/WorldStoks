@@ -34,10 +34,10 @@ function AllOrdersTable({ orders, onSelectOrder }: { orders: any[]; onSelectOrde
               <tr
                 key={order._id}
                 onClick={() => onSelectOrder && onSelectOrder(order)}
-                style={{ cursor: onSelectOrder ? 'pointer' : 'default' }}
+                className={`order-row ${onSelectOrder ? 'clickable' : ''} ${order.type === 'buy' ? 'buy' : 'sell'}`}
               >
-                <td style={{ padding: '0.6rem', textAlign: 'center' }}>{new Date(order.timestamp).toLocaleString('fr-FR')}</td>
-                <td style={{ padding: '0.6rem', textAlign: 'left' }}>
+                <td className="date-cell" style={{ textAlign: 'center' }}>{new Date(order.timestamp).toLocaleString('fr-FR')}</td>
+                <td style={{ textAlign: 'left' }}>
                   {order.stock?.ticker || order.ticker ? (
                     <Link to={`/stock/${order.stock?.ticker || order.ticker}`} style={{ color: '#fff', textDecoration: 'none' }} onClick={e => e.stopPropagation()}>
                       {order.stock?.name || order.name || '-'}
@@ -46,13 +46,13 @@ function AllOrdersTable({ orders, onSelectOrder }: { orders: any[]; onSelectOrde
                     order.stock?.name || order.name || '-'
                   )}
                 </td>
-                <td style={{ padding: '0.6rem', textAlign: 'center', width: 90 }}>{order.stock?.ticker || order.ticker || '-'}</td>
-                <td style={{ padding: '0.6rem', textAlign: 'center' }}>{order.price?.toLocaleString('fr-FR', { style: 'currency', currency: 'USD' }) || '-'}</td>
-                <td style={{ padding: '0.6rem', textAlign: 'center' }}>{order.quantity}</td>
-                <td style={{ padding: '0.6rem', textAlign: 'center' }}>{order.type === 'buy' ? 'Achat' : 'Vente'}</td>
-                <td style={{ padding: '0.6rem', textAlign: 'center' }}>{order.quantityRemaining ?? '-'}</td>
-                <td style={{ padding: '0.6rem', textAlign: 'center', fontWeight: 700 }}>{statut}</td>
-                <td style={{ padding: '0.6rem', textAlign: 'center' }}>{order.user?.username || order.user?.email || order.user || '-'}</td>
+                <td className="ticker-cell" style={{ textAlign: 'center', width: 90 }}>{order.stock?.ticker || order.ticker || '-'}</td>
+                <td className="price-cell" style={{ textAlign: 'center' }}>{order.price?.toLocaleString('fr-FR', { style: 'currency', currency: 'USD' }) || '-'}</td>
+                <td style={{ textAlign: 'center' }}>{order.quantity}</td>
+                <td style={{ textAlign: 'center' }}><span className="type-badge">{order.type === 'buy' ? 'Achat' : 'Vente'}</span></td>
+                <td style={{ textAlign: 'center' }}>{order.quantityRemaining ?? '-'}</td>
+                <td style={{ textAlign: 'center', fontWeight: 700 }}>{statut}</td>
+                <td style={{ textAlign: 'center' }}>{order.user?.username || order.user?.email || order.user || '-'}</td>
               </tr>
             );
           })}
@@ -105,9 +105,9 @@ const HistoryTab: React.FC<{ history: Transaction[]; orders?: any[]; onCancel?: 
                 const priceStr = (priceVal !== null && priceVal !== undefined) ? priceVal.toLocaleString('fr-FR', { style: 'currency', currency: 'USD' }) : '-';
 
                 return (
-                  <tr key={order._id || order.id || Math.random().toString(36).slice(2,9)}>
+                  <tr key={order._id || order.id || Math.random().toString(36).slice(2,9)} className={`order-row ${order.type === 'buy' ? 'buy' : 'sell'}`}>
                     <td style={{ padding: '0.6rem', textAlign: 'center' }}>{dateStr}</td>
-                    <td style={{ padding: '0.6rem', textAlign: 'center' }}>{order.type === 'buy' ? 'Achat' : 'Vente'}</td>
+                    <td style={{ padding: '0.6rem', textAlign: 'center' }}><span className="type-badge">{order.type === 'buy' ? 'Achat' : 'Vente'}</span></td>
                     <td style={{ padding: '0.6rem', textAlign: 'center' }}>{order.ticker || order.stock?.ticker || '-'}</td>
                     <td style={{ padding: '0.6rem', textAlign: 'center' }}>{priceStr}</td>
                     <td style={{ padding: '0.6rem', textAlign: 'center' }}>{order.quantity ?? '-'}</td>
