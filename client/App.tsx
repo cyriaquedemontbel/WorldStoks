@@ -6,6 +6,7 @@ import { StockDetailPage } from './pages/StockDetailPage';
 import { LoginPage } from './pages/LoginPage';
 import { AboutPage } from './pages/AboutPage';
 import OrderBookPage from './pages/OrderBookPage';
+import PageContainer from './components/PageContainer';
 import { PortfolioPage } from './pages/PortfolioPage';
 // ...existing code...
 import { FundsPage } from './pages/FundsPage';
@@ -243,6 +244,7 @@ const App: React.FC = () => {
       handleTrade(() => api.apiPlaceOrder(ticker, 'sell', price, quantity), `${quantity} action(s) vendue(s) !`);
   };
 
+
   const handleAddStock = async (stock: Stock) => {
     try {
       const newStock = await api.apiAddStock(stock);
@@ -312,61 +314,76 @@ const App: React.FC = () => {
         onLogout={handleLogout}
       />
 
-      {errorMessage && <div className="error-toast">{errorMessage}</div>}
+  {errorMessage && <div className="error-toast">{errorMessage}</div>}
 
       <Routes>
         <Route
           path="/"
           element={
-            <HomePage
-              stocks={stocks}
-              user={user}
-              onStockSelect={(ticker) => navigate(`/stock/${ticker}`)}
-              onOpenTradeModal={handleOpenTradeModal}
-              onNavigate={handleNavigate}
-            />
+            <PageContainer>
+              <HomePage
+                stocks={stocks}
+                user={user}
+                onStockSelect={(ticker) => navigate(`/stock/${ticker}`)}
+                onOpenTradeModal={handleOpenTradeModal}
+                onNavigate={handleNavigate}
+              />
+            </PageContainer>
           }
         />
         <Route
           path="/orderbook/:ticker"
-          element={<OrderBookPage />}
+          element={
+            <PageContainer>
+              <OrderBookPage />
+            </PageContainer>
+          }
         />
         <Route
           path="/stock/:ticker"
-          element={<StockDetailPage stocks={stocks} user={user} onOpenTradeModal={handleOpenTradeModal} />}
+          element={
+            <PageContainer>
+              <StockDetailPage stocks={stocks} user={user} onOpenTradeModal={handleOpenTradeModal} />
+            </PageContainer>
+          }
         />
-        <Route path="/login" element={<LoginPage onLogin={handleLogin} onSignUp={handleSignUp} />} />
-        <Route path="/about" element={<AboutPage />} />
+        <Route path="/login" element={<PageContainer><LoginPage onLogin={handleLogin} onSignUp={handleSignUp} /></PageContainer>} />
+        <Route path="/about" element={<PageContainer><AboutPage /></PageContainer>} />
         <Route
           path="/portfolio"
           element={
-            <PortfolioPage
-              stocks={stocks}
-              user={user}
-              onNavigate={(page, ticker) => ticker ? navigate(`/stock/${ticker}`) : handleNavigate(page)}
-            />
+            <PageContainer>
+              <PortfolioPage
+                stocks={stocks}
+                user={user}
+                onNavigate={(page, ticker) => ticker ? navigate(`/stock/${ticker}`) : handleNavigate(page)}
+              />
+            </PageContainer>
           }
         />
   // ...existing code...
-        <Route path="/funds" element={<FundsPage user={user} onUpdateFunds={handleUpdateFunds} />} />
+        <Route path="/funds" element={<PageContainer><FundsPage user={user} onUpdateFunds={handleUpdateFunds} /></PageContainer>} />
         <Route
           path="/admin"
           element={
-            user.isAdmin ? (
-              <AdminPage
-                stocks={stocks}
-                onAddStock={handleAddStock}
-                onUpdateStock={handleUpdateStock}
-                onDeleteStock={handleDeleteStock}
-              />
-            ) : (
-              <Navigate to="/" />
-            )
+            <PageContainer>
+              {user.isAdmin ? (
+                <AdminPage
+                  stocks={stocks}
+                  onAddStock={handleAddStock}
+                  onUpdateStock={handleUpdateStock}
+                  onDeleteStock={handleDeleteStock}
+                />
+              ) : (
+                <Navigate to="/" />
+              )}
+            </PageContainer>
           }
         />
-        <Route path="/settings" element={<SettingsPage user={user} onUpdateUser={setUser} />} />
+        <Route path="/settings" element={<PageContainer><SettingsPage user={user} onUpdateUser={setUser} /></PageContainer>} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
+    
 
       {tradeModalState.isOpen && tradeModalState.stock && tradeModalState.type && (
         <TradeModal

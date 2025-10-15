@@ -1,0 +1,269 @@
+/* Removed / deprecated CSS (auto-extracted) */
+
+/* --- Removed: orderbook slide / carousel (legacy) --- */
+.orderbook-slide-wrapper {
+  position: relative;
+  width: 100%;
+  min-height: 320px;
+  overflow: hidden;
+}
+.orderbook-slide-content {
+  display: flex;
+  width: 200%;
+  transition: transform 0.5s cubic-bezier(.77,.2,.05,1.0);
+}
+.orderbook-slide-page {
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.orderbook-carousel {
+  background: none;
+  box-shadow: none;
+  border-radius: 0;
+  margin: 0;
+  padding: 0;
+  max-width: 100%;
+}
+.orderbook-carousel-content {
+  display: flex;
+  transition: transform 0.5s cubic-bezier(.77,.2,.05,1.0);
+  width: 200%;
+}
+.orderbook-carousel-page {
+  width: 100%;
+  flex-shrink: 0;
+  padding: 0 1rem;
+}
+
+/* Carrousel carnet d'ordre amélioré (removed) */
+.orderbook-carousel {
+  position: relative;
+  width: 100%;
+  min-height: 320px;
+  overflow: hidden;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  margin: 2rem auto;
+  max-width: 700px;
+  padding: 2rem;
+}
+.orderbook-carousel-content {
+  display: flex;
+  transition: transform 0.5s cubic-bezier(.77,.2,.05,1.0);
+  width: 200%;
+}
+.orderbook-carousel-page {
+  width: 100%;
+  flex-shrink: 0;
+  padding: 0 1rem;
+}
+
+/* --- Removed: Crypto Detail Page styles (not referenced) --- */
+.crypto-detail-page-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 70vh;
+  padding: 2rem 0;
+  width: 90%;
+  max-width: 1100px;
+  margin: 0 auto 2rem auto;
+  padding-left: 2rem;
+  padding-right: 2rem;
+  width: 90%;
+  max-width: 1100px;
+  margin: 0 auto 2rem auto;
+  padding-left: 2rem;
+  padding-right: 2rem;
+}
+.crypto-card {
+  background: #181818;
+  border-radius: 1rem;
+  box-shadow: 0 1px 8px rgba(0,0,0,0.12);
+  padding: 2rem 2rem 1.7rem 2rem;
+  max-width: none;
+  width: 100%;
+  border: 1px solid #222;
+  color: #f3f3f3;
+}
+.crypto-back-btn {
+  background: none;
+  border: none;
+  color: var(--primary, #007bff);
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.2rem;
+  cursor: pointer;
+}
+.crypto-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+.crypto-logo-ticker {
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+}
+.crypto-logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #d1d5db;
+}
+.crypto-logo-circle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #222;
+}
+.crypto-name {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 0.2rem;
+  color: #fff;
+}
+.crypto-ticker {
+  font-size: 1rem;
+  color: #666;
+  font-weight: 500;
+}
+.crypto-price-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+.crypto-price {
+  font-size: 1.45rem;
+  font-weight: 700;
+  margin-bottom: 0.2rem;
+  color: #fff;
+}
+.crypto-change {
+  font-size: 1rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: #222;
+}
+.crypto-change--positive {
+  color: #2e7d32;
+}
+.crypto-change--negative {
+  color: #c62828;
+}
+.crypto-chart-panel {
+  margin-bottom: 1.5rem;
+}
+.crypto-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.7rem;
+}
+.crypto-stat {
+  background: #f3f4f6;
+  border-radius: 0.6rem;
+  padding: 0.6rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  border: 1px solid #e5e7eb;
+}
+.crypto-stat-label {
+  font-size: 0.95rem;
+  color: #666;
+  margin-bottom: 0.2rem;
+}
+.crypto-stat-value {
+  font-size: 1.08rem;
+  font-weight: 700;
+  color: #222;
+}
+.crypto-trade-panel {
+  margin-bottom: 1.5rem;
+}
+.crypto-trade-actions {
+  display: flex;
+  gap: 1.2rem;
+  margin-top: 0.7rem;
+}
+.crypto-btn {
+  flex: 1;
+  padding: 0.7rem 0;
+  font-size: 1.08rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  background: #e5e7eb;
+  color: #222;
+}
+.crypto-btn--buy {
+  background: #e0f2e9;
+  color: #2e7d32;
+}
+.crypto-btn--sell {
+  background: #fbe9e7;
+  color: #c62828;
+}
+.crypto-btn:disabled {
+  background: #f3f4f6;
+  color: #aaa;
+  cursor: not-allowed;
+}
+.crypto-link-btn {
+  background: none;
+  border: none;
+  color: #007bff;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.crypto-no-available {
+  color: #d32f2f;
+  margin-top: 0.5rem;
+}
+.crypto-description {
+  margin-top: 1.2rem;
+  background: #111;
+  border-radius: 0.6rem;
+  padding: 1rem 1.2rem;
+  border: 1px solid #222;
+  color: #f3f3f3;
+}
+.crypto-description h3 {
+  margin-bottom: 0.5rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+/* funds misc removed */
+.funds-form-message--error {
+  color: #d32f2f !important;
+}
+
+/* main-footer removed */
+.main-footer {
+  background: var(--background-light);
+  color: var(--text-secondary);
+  text-align: center;
+  padding: 1.5rem 0 1rem 0;
+  border-top: 1px solid var(--border-color);
+  margin-top: 2rem;
+  font-size: 1rem;
+  width: 90%;
+  max-width: 1100px;
+  margin: 2rem auto 0 auto;
+  padding-left: 2rem;
+  padding-right: 2rem;
+}

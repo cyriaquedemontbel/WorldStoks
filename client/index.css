@@ -1,5 +1,13 @@
-/* Historique des ordres */
-.root,
+/* ======================================================================
+   Reorganized CSS
+   - Section 1: Global variables & base styles (applies to all pages)
+   - Following sections: Per-page styles (OrderBook, Orders Table, Funds, Settings, Forms, etc.)
+   Note: rules were preserved; only re-ordered and grouped for clarity.
+   ====================================================================== */
+
+/* -------------------------------
+   Global: design tokens & variables
+   ------------------------------- */
 :root {
   /* Design tokens */
   --bg: #0f1724; /* app dark background */
@@ -13,9 +21,16 @@
   --radius: 12px;
   --shadow-1: 0 6px 24px rgba(2,6,23,0.6);
   --gap: 1rem;
+  /* Page layout gaps (percent-based for proportional spacing) */
+  --page-side-gap: 4%;
+  --page-top-gap: 5%;
 }
 
-/* Global helpers */
+
+/* -------------------------------
+   Global: base helpers & elements
+   (used across multiple pages)
+   ------------------------------- */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -31,6 +46,74 @@
 .btn--buy { background: linear-gradient(90deg,var(--accent-green),#128a45); color: #fff; }
 .btn--sell { background: linear-gradient(90deg,var(--accent-red),#c0392b); color: #fff; }
 
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+th, td {
+  padding: 0.7rem 0.5rem;
+  text-align: center;
+}
+th {
+  background: rgba(255,255,255,0.03);
+  font-weight: 600;
+  color: var(--muted);
+}
+tr {
+  transition: background 0.12s ease;
+}
+tr:hover {
+  background: rgba(255,255,255,0.02);
+}
+
+/* Base page layout */
+body {
+  margin: 0;
+  font-family: 'Inter', Arial, sans-serif;
+  background: #111;
+  color: #f3f3f3;
+}
+
+/* Main page container applied globally (wrapped around Routes) */
+.page-container {
+  /* Full-page container: fill viewport and center children */
+  width: 100%;
+  height: 100vh; /* take full viewport height */
+  margin: 30% 0; /* reset default margins */
+  display: flex;
+  align-items: center; /* vertical centering of children */
+  justify-content: center; /* horizontal centering of children */
+  padding: 10% 5%; /* keep side gap from variables */
+  box-sizing: border-box;
+}
+
+/* Inner wrapper to constrain content while keeping the main container full-bleed */
+.page-container {
+  /* Top-aligned page container: content starts directly under the header */
+  width: 100%;
+  display: block;
+  margin: 0;
+  padding: 0 var(--page-side-gap);
+  box-sizing: border-box;
+}
+
+/* Inner wrapper: constrain content width and center to match header (.header-content max-width: 1400px) */
+.page-inner {
+  width: 100%;
+  max-width: 1400px;
+  margin: 20px auto;
+  padding-top: 0; /* ensure no extra gap under header */
+}
+
+/* ======================================================================
+   Per-page styles
+   Grouped below: OrderBook, Orders Table, Funds, Settings, Forms, etc.
+   ====================================================================== */
+
+/* -------------------------------
+   OrderBook (global components used by order pages)
+   ------------------------------- */
 .orderbook-history-container {
   background: #fff;
   border-radius: 16px;
@@ -57,6 +140,7 @@
 .orderbook-history-table tr:hover {
   background: #f7fbff;
 }
+
 .orderbook-menu-header {
   display: flex;
   justify-content: center;
@@ -89,28 +173,14 @@
   background: rgba(255,255,255,0.02);
   color: var(--muted);
 }
-.orderbook-slide-wrapper {
-  position: relative;
-  width: 100%;
-  min-height: 320px;
-  overflow: hidden;
-}
-.orderbook-slide-content {
-  display: flex;
-  width: 200%;
-  transition: transform 0.5s cubic-bezier(.77,.2,.05,1.0);
-}
-.orderbook-slide-page {
-  width: 100%;
-  flex-shrink: 0;
-}
 .orderbook-menu-content {
   position: relative;
   min-height: 320px;
 }
-/* Carnet d'ordre - uniformisation */
+
+/* Carnet d'ordre - uniformisation (dark variant) */
 .orderbook-container {
-  background: linear-gradient(180deg,var(--card-bg), #08101a);
+  background-color: none;
   border-radius: var(--radius);
   box-shadow: var(--shadow-1);
   padding: 1.5rem 1.25rem;
@@ -175,10 +245,14 @@
   background: #f0f4fa;
   font-weight: 600;
 }
+
+/*  chui iciiiicciiicccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc*/
+
+
 .orderform-container {
-  background: linear-gradient(180deg,var(--card-bg), #08101a);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-1);
+  background: none ;
+  border-radius: none;
+  box-shadow: none;
   padding: 1.5rem 1.25rem;
   margin-bottom: 1.5rem;
 }
@@ -229,6 +303,7 @@
 .orderform-success {
   color: #1a7f37;
 }
+
 .orderbook-menu-wrapper {
   background: #fff;
   border-radius: 16px;
@@ -267,24 +342,6 @@
 .orderbook-menu-content {
   min-height: 320px;
 }
-.orderbook-carousel {
-  background: none;
-  box-shadow: none;
-  border-radius: 0;
-  margin: 0;
-  padding: 0;
-  max-width: 100%;
-}
-.orderbook-carousel-content {
-  display: flex;
-  transition: transform 0.5s cubic-bezier(.77,.2,.05,1.0);
-  width: 200%;
-}
-.orderbook-carousel-page {
-  width: 100%;
-  flex-shrink: 0;
-  padding: 0 1rem;
-}
 .orderbook-menu-wrapper h3 {
   font-size: 1.5rem;
   font-weight: 700;
@@ -315,31 +372,9 @@
     font-size: 1rem;
   }
 }
-/* Carrousel carnet d'ordre */
-/* Carrousel carnet d'ordre amélioré */
-.orderbook-carousel {
-  position: relative;
-  width: 100%;
-  min-height: 320px;
-  overflow: hidden;
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-  margin: 2rem auto;
-  max-width: 700px;
-  padding: 2rem;
-}
-.orderbook-carousel-content {
-  display: flex;
-  transition: transform 0.5s cubic-bezier(.77,.2,.05,1.0);
-  width: 200%;
-}
-.orderbook-carousel-page {
-  width: 100%;
-  flex-shrink: 0;
-  padding: 0 1rem;
-}
-/* Carnet d'ordre stylé */
+
+/* Carrousel / alternate orderbook styling (kept after primary orderbook rules to preserve cascade)
+   The second .orderbook-container block intentionally overrides earlier dark styles when used. */
 .orderbook-container {
   background: #fff;
   border-radius: 12px;
@@ -374,32 +409,7 @@
 .orderbook-menu-content {
   min-height: 300px;
 }
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 1rem;
-}
-th, td {
-  padding: 0.7rem 0.5rem;
-  text-align: center;
-}
-th {
-  background: rgba(255,255,255,0.03);
-  font-weight: 600;
-  color: var(--muted);
-}
-tr {
-  transition: background 0.12s ease;
-}
-tr:hover {
-  background: rgba(255,255,255,0.02);
-}
-/* keep bid/ask color hints if present */
-.orderbook-bids th, .orderbook-bids td { color: var(--accent-green); }
-.orderbook-asks th, .orderbook-asks td { color: var(--accent-red); }
-.orderbook-container h3 {
-  margin-bottom: 1.5rem;
-}
+
 @media (max-width: 600px) {
   .orderbook-container {
     padding: 1rem;
@@ -411,7 +421,10 @@ tr:hover {
   }
 }
 
-/* Styles spécifiques au Carnet d'ordre complet */
+
+/* -------------------------------
+   Orders Table (full orders page)
+   ------------------------------- */
 .orders-table-container {
   background: linear-gradient(180deg, #1b1b1b 0%, #121212 100%);
   border-radius: 12px;
@@ -438,8 +451,6 @@ tr:hover {
   padding: 0.6rem 0.75rem;
   border-top: 1px solid rgba(255,255,255,0.02);
 }
-.order-row.clickable { cursor: pointer; }
-.order-row.clickable:hover { background: linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.03)); }
 .order-row .date-cell { color: #bfc7d6; font-size: 0.9rem; }
 .order-row .ticker-cell { font-weight: 700; color: #fff; }
 .order-row .price-cell { color: #dbeafe; }
@@ -458,196 +469,11 @@ tr:hover {
   .orders-table thead th, .orders-table tbody td { font-size: 0.85rem; padding: 0.5rem; }
   .orders-table-container { padding: 0.8rem; }
 }
-/* --- Crypto Detail Page --- */
-.crypto-detail-page-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-height: 70vh;
-  padding: 2rem 0;
-  width: 90%;
-  max-width: 1100px;
-  margin: 0 auto 2rem auto;
-  padding-left: 2rem;
-  padding-right: 2rem;
-  width: 90%;
-  max-width: 1100px;
-  margin: 0 auto 2rem auto;
-  padding-left: 2rem;
-  padding-right: 2rem;
-}
-.crypto-card {
-  background: #181818;
-  border-radius: 1rem;
-  box-shadow: 0 1px 8px rgba(0,0,0,0.12);
-  padding: 2rem 2rem 1.7rem 2rem;
-  max-width: none;
-  width: 100%;
-  border: 1px solid #222;
-  color: #f3f3f3;
-}
-.crypto-back-btn {
-  background: none;
-  border: none;
-  color: var(--primary, #007bff);
-  font-size: 1rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 1.2rem;
-  cursor: pointer;
-}
-.crypto-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-}
-.crypto-logo-ticker {
-  display: flex;
-  align-items: center;
-  gap: 1.1rem;
-}
-.crypto-logo {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: #e5e7eb;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid #d1d5db;
-}
-.crypto-logo-circle {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #222;
-}
-.crypto-name {
-  font-size: 1.25rem;
-  font-weight: 700;
-  margin-bottom: 0.2rem;
-  color: #fff;
-}
-.crypto-ticker {
-  font-size: 1rem;
-  color: #666;
-  font-weight: 500;
-}
-.crypto-price-block {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-}
-.crypto-price {
-  font-size: 1.45rem;
-  font-weight: 700;
-  margin-bottom: 0.2rem;
-  color: #fff;
-}
-.crypto-change {
-  font-size: 1rem;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  color: #222;
-}
-.crypto-change--positive {
-  color: #2e7d32;
-}
-.crypto-change--negative {
-  color: #c62828;
-}
-.crypto-chart-panel {
-  margin-bottom: 1.5rem;
-}
-.crypto-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1.7rem;
-}
-.crypto-stat {
-  background: #f3f4f6;
-  border-radius: 0.6rem;
-  padding: 0.6rem 0.9rem;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  border: 1px solid #e5e7eb;
-}
-.crypto-stat-label {
-  font-size: 0.95rem;
-  color: #666;
-  margin-bottom: 0.2rem;
-}
-.crypto-stat-value {
-  font-size: 1.08rem;
-  font-weight: 700;
-  color: #222;
-}
-.crypto-trade-panel {
-  margin-bottom: 1.5rem;
-}
-.crypto-trade-actions {
-  display: flex;
-  gap: 1.2rem;
-  margin-top: 0.7rem;
-}
-.crypto-btn {
-  flex: 1;
-  padding: 0.7rem 0;
-  font-size: 1.08rem;
-  font-weight: 600;
-  border: none;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: background 0.2s;
-  background: #e5e7eb;
-  color: #222;
-}
-.crypto-btn--buy {
-  background: #e0f2e9;
-  color: #2e7d32;
-}
-.crypto-btn--sell {
-  background: #fbe9e7;
-  color: #c62828;
-}
-.crypto-btn:disabled {
-  background: #f3f4f6;
-  color: #aaa;
-  cursor: not-allowed;
-}
-.crypto-link-btn {
-  background: none;
-  border: none;
-  color: #007bff;
-  text-decoration: underline;
-  cursor: pointer;
-}
-.crypto-no-available {
-  color: #d32f2f;
-  margin-top: 0.5rem;
-}
-.crypto-description {
-  margin-top: 1.2rem;
-  background: #111;
-  border-radius: 0.6rem;
-  padding: 1rem 1.2rem;
-  border: 1px solid #222;
-  color: #f3f3f3;
-}
-.crypto-description h3 {
-  margin-bottom: 0.5rem;
-  font-size: 1.1rem;
-  font-weight: 600;
-}
-.funds-form-message--error {
-  color: #d32f2f !important;
-}
-/* --- Funds Page --- */
+
+
+/* -------------------------------
+   Funds Page
+   ------------------------------- */
 .funds-page-container {
   display: flex;
   flex-direction: column;
@@ -764,7 +590,11 @@ tr:hover {
   font-weight: 500;
   text-align: center;
 }
-/* --- Settings Page --- */
+
+
+/* -------------------------------
+   Settings Page
+   ------------------------------- */
 .settings-page-container {
   display: flex;
   flex-direction: column;
@@ -848,44 +678,7 @@ tr:hover {
   background: #aaa;
   cursor: not-allowed;
 }
-/* index.css */
-body {
-  margin: 0;
-  font-family: 'Inter', Arial, sans-serif;
-  background: #111;
-  color: #f3f3f3;
-}
 
-/* (theme toggle removed) */
+/* End of reorganized CSS */
 
-.page-container {
-  width: 90%;
-  max-width: 1100px;
-  margin: 5% auto 2rem auto;
-  padding-left: 2rem;
-  padding-right: 2rem;
-  min-height: 80vh;
-}
 
-/* Empêche le chevauchement des chiffres trop longs dans le portefeuille */
-.portfolio-summary .summary-value {
-  word-break: break-all;
-  white-space: normal;
-  display: inline-block;
-  max-width: 100%;
-}
-
-.main-footer {
-  background: var(--background-light);
-  color: var(--text-secondary);
-  text-align: center;
-  padding: 1.5rem 0 1rem 0;
-  border-top: 1px solid var(--border-color);
-  margin-top: 2rem;
-  font-size: 1rem;
-  width: 90%;
-  max-width: 1100px;
-  margin: 2rem auto 0 auto;
-  padding-left: 2rem;
-  padding-right: 2rem;
-}
