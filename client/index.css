@@ -23,7 +23,7 @@
   --gap: 1rem;
   /* Page layout gaps (percent-based for proportional spacing) */
   --page-side-gap: 4%;
-  --page-top-gap: 5%;
+  --page-top-gap: 2%;
 }
 
 
@@ -75,35 +75,21 @@ body {
   color: #f3f3f3;
 }
 
-/* Main page container applied globally (wrapped around Routes) */
+/* Main page container: per-app consistent top and side gaps */
 .page-container {
-  /* Full-page container: fill viewport and center children */
-  width: 100%;
-  height: 100vh; /* take full viewport height */
-  margin: 30% 0; /* reset default margins */
-  display: flex;
-  align-items: center; /* vertical centering of children */
-  justify-content: center; /* horizontal centering of children */
-  padding: 10% 5%; /* keep side gap from variables */
-  box-sizing: border-box;
-}
-
-/* Inner wrapper to constrain content while keeping the main container full-bleed */
-.page-container {
-  /* Top-aligned page container: content starts directly under the header */
   width: 100%;
   display: block;
   margin: 0;
-  padding: 0 var(--page-side-gap);
+  padding: var(--page-top-gap) var(--page-side-gap);
   box-sizing: border-box;
 }
 
-/* Inner wrapper: constrain content width and center to match header (.header-content max-width: 1400px) */
+/* Inner wrapper: constrain content width and center to match header */
 .page-inner {
   width: 100%;
   max-width: 1400px;
   margin: 20px auto;
-  padding-top: 0; /* ensure no extra gap under header */
+  padding-top: 0;
 }
 
 /* ======================================================================
@@ -115,9 +101,9 @@ body {
    OrderBook (global components used by order pages)
    ------------------------------- */
 .orderbook-history-container {
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.10);
+  background: none;
+  border-radius: 12px;
+  box-shadow:none;
   padding: 2rem 1.5rem;
   margin-bottom: 2rem;
 }
@@ -127,7 +113,7 @@ body {
   margin-top: 1rem;
 }
 .orderbook-history-table th, .orderbook-history-table td {
-  padding: 0.7rem 0.5rem;
+  padding: 1rem 0.5rem;
   text-align: center;
 }
 .orderbook-history-table th {
@@ -180,8 +166,9 @@ body {
 
 /* Carnet d'ordre - uniformisation (dark variant) */
 .orderbook-container {
-  background-color: none;
-  border-radius: var(--radius);
+  /* lightweight container variant for small widgets */
+  background: transparent;
+  border-radius: 12px;
   box-shadow: var(--shadow-1);
   padding: 1.5rem 1.25rem;
   margin-bottom: 1.5rem;
@@ -206,7 +193,7 @@ body {
 }
 .orderbook-table-block {
   flex: 1;
-  min-width: 220px;
+  min-width: 210px;
 }
 .orderbook-table-title {
   font-size: 1.1rem;
@@ -246,15 +233,14 @@ body {
   font-weight: 600;
 }
 
-/*  chui iciiiicciiicccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc*/
-
-
 .orderform-container {
   background: none ;
   border-radius: none;
   box-shadow: none;
   padding: 1.5rem 1.25rem;
   margin-bottom: 1.5rem;
+  width: 110%;
+  max-width: 1400px;
 }
 .orderform-header {
   margin-bottom: 1.5rem;
@@ -269,7 +255,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 1.2rem;
-  max-width: 400px;
+  max-width: 600px;
   margin: 0 auto;
 }
 .orderform-row {
@@ -306,11 +292,64 @@ body {
 
 .orderbook-menu-wrapper {
   background: #fff;
-  border-radius: 16px;
+  border-radius: 12px;
   box-shadow: 0 2px 12px rgba(0,0,0,0.10);
-  max-width: 800px;
+  max-width: 900px;
   margin: 2rem auto;
-  padding: 2.5rem 2rem;
+  padding: 2rem;
+}
+.filters-bar {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.filters-group {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.filters-label {
+  color: #cbd5e1;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+.filters-select,
+.filters-input {
+  padding: 0.4rem 0.6rem;
+  background: #101214;
+  border: 1px solid rgba(255,255,255,0.04);
+  color: #e6eef8;
+  border-radius: 6px;
+}
+.filters-select:focus, .filters-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(14,165,164,0.12);
+  border-color: rgba(14,165,164,0.6);
+}
+.filters-clear {
+  margin-left: 0.75rem;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.06);
+  color: #e6eef8;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.filters-clear:hover {
+  background: rgba(255,255,255,0.02);
+}
+.filters-chip {
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
+  padding: 0.35rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.02);
+  color: #f3f3f3;
+  border: 1px solid rgba(255,255,255,0.03);
 }
 .orderbook-menu-nav {
   display: flex;
@@ -349,6 +388,67 @@ body {
   color: var(--primary);
   text-align: center;
 }
+
+/* Dark wrapper used by OrderBookPage */
+.orderbook-page {
+  width: 90%;
+  max-width: 1400px;
+  margin: 2rem auto;
+  background: #222;
+  border-radius: 1.5rem;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.12);
+  padding: 2.5rem 2rem;
+  color: #fff;
+  min-height: 80vh;
+}
+
+.orderbook-page .orderbook-menu-header {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.orderbook-page .orderbook-menu-tab {
+  margin-right: 12px;
+  background: #232323;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.7rem 2rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Notice messages inside orderbook */
+.orderbook-notice { margin-bottom: 12px; text-align: center; }
+.orderbook-notice .notice-chip { display: inline-block; padding: 0.5rem 1rem; border-radius: 8px; color: #fff; }
+.orderbook-notice .notice-success { background: #2ecc71; }
+.orderbook-notice .notice-error { background: #ff6b6b; }
+.orderbook-notice .notice-info { background: #f1c40f; color: #111; }
+
+/* Orders table variants for orderbook page */
+.orderbook-page .orders-table-container {
+  max-width: 1600px;
+  margin: 0 auto;
+  background: none;
+  border-radius: 1rem;
+  box-shadow: none;
+  padding: 2rem;
+}
+
+.orderbook-page .orders-table thead th {
+  background: #222;
+  color: #fff;
+}
+
+.ticker-cell { width: 90px; text-align: center; }
+
+/* History page layout inside orderbook */
+.history-page { background: none; min-height: 80vh; padding: 2rem 0; }
+.no-history { text-align: center; color: #fff; margin-top: 2rem; }
+
+/* Danger button */
+.btn--danger { background: #ff4d4f; color: #fff; border: none; padding: 0.4rem 0.6rem; border-radius: 6px; cursor: pointer; }
+
 .orderbook-menu-wrapper label {
   font-weight: 500;
   color: #222;
@@ -373,65 +473,38 @@ body {
   }
 }
 
-/* Carrousel / alternate orderbook styling (kept after primary orderbook rules to preserve cascade)
-   The second .orderbook-container block intentionally overrides earlier dark styles when used. */
-.orderbook-container {
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-  padding: 2rem;
-  margin: 2rem auto;
-  max-width: 700px;
-}
-.orderbook-menu-nav {
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
-  margin-bottom: 2rem;
-}
-.orderbook-menu-nav button {
-  background: #f5f5f5;
-  border: none;
-  border-radius: 6px 6px 0 0;
-  padding: 0.7rem 2rem;
-  font-size: 1.1rem;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-.orderbook-menu-nav button.active {
-  background: var(--primary);
-  color: #07201f;
-  font-weight: bold;
-}
-.orderbook-menu-nav button:hover:not(.active) {
-  background: rgba(255,255,255,0.02);
-}
-.orderbook-menu-content {
-  min-height: 300px;
-}
-
-@media (max-width: 600px) {
-  .orderbook-container {
-    padding: 1rem;
-    max-width: 100%;
-  }
-  .orderbook-menu-nav button {
-    padding: 0.5rem 1rem;
-    font-size: 1rem;
-  }
-}
+/* Removed alternate/duplicate orderbook variants to reduce unused CSS. */
 
 
 /* -------------------------------
    Orders Table (full orders page)
    ------------------------------- */
 .orders-table-container {
-  background: linear-gradient(180deg, #1b1b1b 0%, #121212 100%);
+  background: none;
   border-radius: 12px;
   padding: 1.25rem;
   color: #f3f3f3;
-  box-shadow: 0 6px 24px rgba(0,0,0,0.6);
 }
+
+/* Specific styles used by OrderBookPage to match previous inline styles */
+.orderbook-menu-wrapper .orders-table-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  background: transparent;
+  border-radius: 1rem;
+  padding: 1.5rem;
+}
+
+/* Narrow variant used by history tab inside orderbook */
+.orderbook-menu-wrapper .history-page .orders-table-container {
+  max-width: 700px;
+  margin: 0 auto;
+  background: #222;
+  border-radius: 1rem;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.12);
+  padding: 2rem;
+}
+
 .orders-table {
   width: 100%;
   border-collapse: collapse;

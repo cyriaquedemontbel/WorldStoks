@@ -2,91 +2,179 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useParams } from 'react-router-dom';
 import { Transaction } from '../types';
-// ...existing code...
+import OrderForm from '../components/OrderForm';
 
 // Table d'ordres complète pour le tab Carnet d'ordre
 function AllOrdersTable({ orders, onSelectOrder }: { orders: any[]; onSelectOrder?: (order: any) => void }) {
-  return (
-    <div className="orders-table-container" style={{ maxWidth: 900, margin: '0 auto', background: '#222', borderRadius: '1rem', boxShadow: '0 2px 16px rgba(0,0,0,0.12)', padding: '2rem' }}>
-      <table className="orders-table" style={{ width: '100%', borderCollapse: 'collapse', color: '#f3f3f3' }}>
-        <thead>
-          <tr style={{ background: '#222', color: '#fff' }}>
-            <th style={{ padding: '0.7rem', fontWeight: 600 }}>Date de publication</th>
-            <th style={{ padding: '0.7rem', fontWeight: 600 }}>Nom de l'action</th>
-            <th style={{ padding: '0.7rem', fontWeight: 600 }}>Ticker</th>
-            <th style={{ padding: '0.7rem', fontWeight: 600 }}>Prix</th>
-            <th style={{ padding: '0.7rem', fontWeight: 600 }}>Quantité</th>
-            <th style={{ padding: '0.7rem', fontWeight: 600 }}>Achat/Vente</th>
-            <th style={{ padding: '0.7rem', fontWeight: 600 }}>Restant</th>
-            <th style={{ padding: '0.7rem', fontWeight: 600 }}>Statut</th>
-            <th style={{ padding: '0.7rem', fontWeight: 600 }}>Utilisateur</th>
-          </tr>
-        </thead>
-        <tbody>
-          {orders.length === 0 ? (
-            <tr><td colSpan={9}>Aucun ordre</td></tr>
-          ) : orders.map(order => {
-            let statut = 'En attente';
-            if (order.status === 'matched') statut = order.type === 'buy' ? 'Acheté' : 'Vendu';
-            if (order.status === 'cancelled') statut = 'Annulé';
+  const [sortField, setSortField] = useState<'date' | 'name' | 'price' | 'quantity' | 'type'>('date');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [filterType, setFilterType] = useState<'all' | 'buy' | 'sell'>('all');
+  const [query, setQuery] = useState<string>('');
 
-            return (
-              <tr
-                key={order._id}
-                onClick={() => onSelectOrder && onSelectOrder(order)}
-                className={`order-row ${onSelectOrder ? 'clickable' : ''} ${order.type === 'buy' ? 'buy' : 'sell'}`}
-              >
-                <td className="date-cell" style={{ textAlign: 'center' }}>{new Date(order.timestamp).toLocaleString('fr-FR')}</td>
-                <td style={{ textAlign: 'left' }}>
-                  {order.stock?.ticker || order.ticker ? (
-                    <Link to={`/stock/${order.stock?.ticker || order.ticker}`} style={{ color: '#fff', textDecoration: 'none' }} onClick={e => e.stopPropagation()}>
-                      {order.stock?.name || order.name || '-'}
-                    </Link>
-                  ) : (
-                    order.stock?.name || order.name || '-'
-                  )}
-                </td>
-                <td className="ticker-cell" style={{ textAlign: 'center', width: 90 }}>{order.stock?.ticker || order.ticker || '-'}</td>
-                <td className="price-cell" style={{ textAlign: 'center' }}>{order.price?.toLocaleString('fr-FR', { style: 'currency', currency: 'USD' }) || '-'}</td>
-                <td style={{ textAlign: 'center' }}>{order.quantity}</td>
-                <td style={{ textAlign: 'center' }}><span className="type-badge">{order.type === 'buy' ? 'Achat' : 'Vente'}</span></td>
-                <td style={{ textAlign: 'center' }}>{order.quantityRemaining ?? '-'}</td>
-                <td style={{ textAlign: 'center', fontWeight: 700 }}>{statut}</td>
-                <td style={{ textAlign: 'center' }}>{order.user?.username || order.user?.email || order.user || '-'}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+  const normalized = (s: any) => (s || '').toString().toLowerCase();
+
+  const filtered = orders.filter(o => {
+    if (filterType !== 'all' && o.type !== filterType) return false;
+    if (!query) return true;
+    const q = query.toLowerCase();
+    const name = (o.stock?.name || o.name || '').toString().toLowerCase();
+    const ticker = (o.stock?.ticker || o.ticker || '').toString().toLowerCase();
+    return name.includes(q) || ticker.includes(q);
+  });
+
+  const sorted = [...filtered].sort((a, b) => {
+    const dir = sortOrder === 'asc' ? 1 : -1;
+    try {
+      if (sortField === 'date') {
+        const ta = new Date(a.timestamp || a.createdAt || a.date || 0).getTime();
+        const tb = new Date(b.timestamp || b.createdAt || b.date || 0).getTime();
+        return (ta - tb) * dir;
+      }
+      if (sortField === 'name') {
+        const na = normalized(a.stock?.name || a.name || a.ticker || '');
+        const nb = normalized(b.stock?.name || b.name || b.ticker || '');
+        return na < nb ? -1 * dir : na > nb ? 1 * dir : 0;
+      }
+      if (sortField === 'price') {
+        const pa = Number(a.price ?? a.pricePerShare ?? 0);
+        const pb = Number(b.price ?? b.pricePerShare ?? 0);
+        return (pa - pb) * dir;
+      }
+      if (sortField === 'quantity') {
+        const qa = Number(a.quantity ?? 0);
+        const qb = Number(b.quantity ?? 0);
+        return (qa - qb) * dir;
+      }
+      if (sortField === 'type') {
+        const ta = normalized(a.type || '');
+        const tb = normalized(b.type || '');
+        return ta < tb ? -1 * dir : ta > tb ? 1 * dir : 0;
+      }
+    } catch (e) {
+      return 0;
+    }
+    return 0;
+  });
+
+  return (
+    <div>
+      <div className="filters-bar">
+        <div className="filters-group">
+          <label className="filters-label">Trier par</label>
+          <select className="filters-select" value={sortField} onChange={e => setSortField(e.target.value as any)}>
+            <option value="date">Date</option>
+            <option value="name">Nom de l'action</option>
+            <option value="price">Prix</option>
+            <option value="quantity">Quantité</option>
+            <option value="type">Achat/Vente</option>
+          </select>
+          <select className="filters-select" value={sortOrder} onChange={e => setSortOrder(e.target.value as any)}>
+            <option value="desc">Desc</option>
+            <option value="asc">Asc</option>
+          </select>
+        </div>
+
+        <div className="filters-group">
+          <label className="filters-label">Filtrer</label>
+          <select className="filters-select" value={filterType} onChange={e => setFilterType(e.target.value as any)}>
+            <option value="all">Tous</option>
+            <option value="buy">Achat</option>
+            <option value="sell">Vente</option>
+          </select>
+        </div>
+
+        <div className="filters-right">
+          <input className="filters-input" placeholder="Rechercher nom ou ticker" value={query} onChange={e => setQuery(e.target.value)} />
+          <button
+            type="button"
+            className="filters-clear"
+            onClick={() => {
+              setSortField('date');
+              setSortOrder('desc');
+              setFilterType('all');
+              setQuery('');
+            }}
+          >Enlever les filtres</button>
+        </div>
+      </div>
+
+      <div className="orders-table-container">
+        <table className="orders-table">
+          <thead>
+            <tr>
+              <th>Date de publication</th>
+              <th className="text-left">Nom de l'action</th>
+              <th>Ticker</th>
+              <th>Prix</th>
+              <th>Quantité</th>
+              <th>Achat/Vente</th>
+              <th>Restant</th>
+              <th>Statut</th>
+              <th>Utilisateur</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sorted.length === 0 ? (
+              <tr><td colSpan={9}>Aucun ordre</td></tr>
+            ) : sorted.map(order => {
+              let statut = 'En attente';
+              if (order.status === 'matched') statut = order.type === 'buy' ? 'Acheté' : 'Vendu';
+              if (order.status === 'cancelled') statut = 'Annulé';
+
+              return (
+                <tr
+                  key={order._id}
+                  onClick={() => onSelectOrder && onSelectOrder(order)}
+                  className={`order-row ${onSelectOrder ? 'clickable' : ''} ${order.type === 'buy' ? 'buy' : 'sell'}`}
+                >
+                  <td className="date-cell">{order.timestamp ? new Date(order.timestamp).toLocaleString('fr-FR') : '-'}</td>
+                  <td className="text-left">
+                    {order.stock?.ticker || order.ticker ? (
+                      <Link to={`/stock/${order.stock?.ticker || order.ticker}`} className="table-link" onClick={e => e.stopPropagation()}>
+                        {order.stock?.name || order.name || '-'}
+                      </Link>
+                    ) : (
+                      order.stock?.name || order.name || '-'
+                    )}
+                  </td>
+                  <td className="ticker-cell">{order.stock?.ticker || order.ticker || '-'}</td>
+                  <td className="price-cell">{(order.price ?? order.pricePerShare) ? Number(order.price ?? order.pricePerShare).toLocaleString('fr-FR', { style: 'currency', currency: 'USD' }) : '-'}</td>
+                  <td>{order.quantity ?? '-'}</td>
+                  <td><span className="type-badge">{order.type === 'buy' ? 'Achat' : 'Vente'}</span></td>
+                  <td>{order.quantityRemaining ?? '-'}</td>
+                  <td className="status-cell">{statut}</td>
+                  <td>{order.user?.username || order.user?.email || order.user || '-'}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
-// ...existing code...
-// ...existing code...
 
+// History tab: user's orders + transactions
 const HistoryTab: React.FC<{ history: Transaction[]; orders?: any[]; onCancel?: (id: string) => void; isAuth?: boolean }> = ({ history, orders = [], onCancel, isAuth }) => {
   const sortedHistory = Array.isArray(history)
     ? [...history].sort((a, b) => new Date(b.timestamp ?? b.createdAt ?? b.date).getTime() - new Date(a.timestamp ?? a.createdAt ?? a.date).getTime())
     : [];
-    // ...existing code...
 
   return (
-    <section className="history-page" style={{ background: '#181818', minHeight: '80vh', padding: '2rem 0' }}>
-      {/* Ordres */}
-      {/* Ordres (restored to original layout, only user's orders) */}
-      <h2 style={{ color: '#fff', textAlign: 'center', margin: '2rem 0 1rem', fontWeight: 700 }}>Mes Ordres</h2>
-      <div className="orders-table-container" style={{ maxWidth: 700, margin: '0 auto', background: '#222', borderRadius: '1rem', boxShadow: '0 2px 16px rgba(0,0,0,0.12)', padding: '2rem' }}>
-        <table className="orders-table" style={{ width: '100%', borderCollapse: 'collapse', color: '#f3f3f3' }}>
+    <section className="history-page">
+      <h2 className="section-title">Mes Ordres</h2>
+      <div className="orders-table-container">
+        <table className="orders-table">
           <thead>
-            <tr style={{ background: '#222', color: '#fff' }}>
-              <th style={{ padding: '0.7rem', fontWeight: 600 }}>Date</th>
-              <th style={{ padding: '0.7rem', fontWeight: 600 }}>Type</th>
-              <th style={{ padding: '0.7rem', fontWeight: 600 }}>Ticker</th>
-              <th style={{ padding: '0.7rem', fontWeight: 600 }}>Prix</th>
-              <th style={{ padding: '0.7rem', fontWeight: 600 }}>Quantité</th>
-              <th style={{ padding: '0.7rem', fontWeight: 600 }}>Restant</th>
-              <th style={{ padding: '0.7rem', fontWeight: 600 }}>Statut</th>
-              {onCancel && <th style={{ padding: '0.7rem', fontWeight: 600 }}>Action</th>}
+            <tr>
+              <th>Date</th>
+              <th>Type</th>
+              <th>Ticker</th>
+              <th>Prix</th>
+              <th>Quantité</th>
+              <th>Restant</th>
+              <th>Statut</th>
+              {onCancel && <th>Action</th>}
             </tr>
           </thead>
           <tbody>
@@ -101,24 +189,21 @@ const HistoryTab: React.FC<{ history: Transaction[]; orders?: any[]; onCancel?: 
                 const ts = order.timestamp ?? order.createdAt ?? order.date ?? null;
                 const dateStr = ts ? new Date(ts).toLocaleString('fr-FR') : '-';
 
-                const priceVal = order.price ?? order.pricePerShare ?? 0;
-                const priceStr = (priceVal !== null && priceVal !== undefined) ? priceVal.toLocaleString('fr-FR', { style: 'currency', currency: 'USD' }) : '-';
+                const priceVal = order.price ?? order.pricePerShare ?? null;
+                const priceStr = (priceVal !== null && priceVal !== undefined) ? Number(priceVal).toLocaleString('fr-FR', { style: 'currency', currency: 'USD' }) : '-';
 
                 return (
                   <tr key={order._id || order.id || Math.random().toString(36).slice(2,9)} className={`order-row ${order.type === 'buy' ? 'buy' : 'sell'}`}>
-                    <td style={{ padding: '0.6rem', textAlign: 'center' }}>{dateStr}</td>
-                    <td style={{ padding: '0.6rem', textAlign: 'center' }}><span className="type-badge">{order.type === 'buy' ? 'Achat' : 'Vente'}</span></td>
-                    <td style={{ padding: '0.6rem', textAlign: 'center' }}>{order.ticker || order.stock?.ticker || '-'}</td>
-                    <td style={{ padding: '0.6rem', textAlign: 'center' }}>{priceStr}</td>
-                    <td style={{ padding: '0.6rem', textAlign: 'center' }}>{order.quantity ?? '-'}</td>
-                    <td style={{ padding: '0.6rem', textAlign: 'center' }}>{order.quantityRemaining ?? '-'}</td>
-                    <td style={{ padding: '0.6rem', textAlign: 'center', fontWeight: 700 }}>{statut}</td>
+                    <td className="date-cell">{dateStr}</td>
+                    <td><span className="type-badge">{order.type === 'buy' ? 'Achat' : 'Vente'}</span></td>
+                    <td className="ticker-cell">{order.ticker || order.stock?.ticker || '-'}</td>
+                    <td className="price-cell">{priceStr}</td>
+                    <td>{order.quantity ?? '-'}</td>
+                    <td>{order.quantityRemaining ?? '-'}</td>
+                    <td className="status-cell">{statut}</td>
                     {onCancel && (
-                      <td style={{ padding: '0.6rem', textAlign: 'center' }}>
-                        <button
-                          onClick={() => onCancel(order._id)}
-                          style={{ background: '#ff4d4f', color: '#fff', border: 'none', padding: '0.4rem 0.6rem', borderRadius: 6, cursor: 'pointer' }}
-                        >Annuler</button>
+                      <td>
+                        <button onClick={() => onCancel(order._id)} className="btn--danger">Annuler</button>
                       </td>
                     )}
                   </tr>
@@ -131,19 +216,20 @@ const HistoryTab: React.FC<{ history: Transaction[]; orders?: any[]; onCancel?: 
           </tbody>
         </table>
       </div>
-      <h2 style={{ color: '#fff', textAlign: 'center', margin: '2rem 0 1rem', fontWeight: 700 }}>Historique des Transactions</h2>
-      {/* Transactions */}
+      <h2> </h2>
+      <h2 className="section-title">Historique des Transactions</h2>
+      <h2>  </h2>
       {sortedHistory.length > 0 ? (
-        <div className="history-table-container" style={{ maxWidth: 700, margin: '0 auto', background: '#222', borderRadius: '1rem', boxShadow: '0 2px 16px rgba(0,0,0,0.12)', padding: '2rem' }}>
-          <table className="history-table" style={{ width: '100%', borderCollapse: 'collapse', color: '#f3f3f3' }}>
+        <div className="history-table-container">
+          <table className="history-table">
             <thead>
-              <tr style={{ background: '#222', color: '#fff' }}>
-                <th style={{ padding: '0.7rem', fontWeight: 600 }}>Date</th>
-                <th style={{ padding: '0.7rem', fontWeight: 600 }}>Type</th>
-                <th style={{ padding: '0.7rem', fontWeight: 600 }}>Actif</th>
-                <th style={{ padding: '0.7rem', fontWeight: 600 }}>Quantité</th>
-                <th style={{ padding: '0.7rem', fontWeight: 600 }}>Prix / Action</th>
-                <th style={{ padding: '0.7rem', fontWeight: 600 }}>Valeur Totale</th>
+              <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Actif</th>
+                <th>Quantité</th>
+                <th>Prix / Action</th>
+                <th>Valeur Totale</th>
               </tr>
             </thead>
             <tbody>
@@ -154,20 +240,17 @@ const HistoryTab: React.FC<{ history: Transaction[]; orders?: any[]; onCancel?: 
                 const pricePerShare = tx.pricePerShare ?? tx.price ?? 0;
                 const totalValue = tx.totalValue ?? quantity * pricePerShare;
                 const typeLabel = tx.type === 'buy' ? 'Achat' : 'Vente';
-                const rowStyle = tx.type === 'buy'
-                  ? { background: '#1a2b1a', color: '#b6f7b6' }
-                  : { background: '#2b1a1a', color: '#f7b6b6' };
                 const name = tx.name ?? '-';
                 const ticker = tx.ticker ?? '-';
 
                 return (
-                  <tr key={tx.id ?? Math.random().toString(36).substr(2, 9)} style={rowStyle}>
-                    <td style={{ padding: '0.6rem', textAlign: 'center' }}>{timestamp}</td>
-                    <td style={{ padding: '0.6rem', textAlign: 'center', fontWeight: 700 }}>{typeLabel}</td>
-                    <td style={{ padding: '0.6rem', textAlign: 'center' }}>{name} <span style={{ color: '#aaa' }}>({ticker})</span></td>
-                    <td style={{ padding: '0.6rem', textAlign: 'center' }}>{quantity.toLocaleString('fr-FR')}</td>
-                    <td style={{ padding: '0.6rem', textAlign: 'center' }}>{pricePerShare.toLocaleString('fr-FR', { style: 'currency', currency: 'USD' })}</td>
-                    <td style={{ padding: '0.6rem', textAlign: 'center' }}>{totalValue.toLocaleString('fr-FR', { style: 'currency', currency: 'USD' })}</td>
+                  <tr key={tx.id ?? Math.random().toString(36).substr(2, 9)}>
+                    <td>{timestamp}</td>
+                    <td className="status-cell">{typeLabel}</td>
+                    <td>{name} <span className="ticker-cell">({ticker})</span></td>
+                    <td>{quantity.toLocaleString('fr-FR')}</td>
+                    <td>{pricePerShare.toLocaleString('fr-FR', { style: 'currency', currency: 'USD' })}</td>
+                    <td>{totalValue.toLocaleString('fr-FR', { style: 'currency', currency: 'USD' })}</td>
                   </tr>
                 );
               })}
@@ -175,7 +258,7 @@ const HistoryTab: React.FC<{ history: Transaction[]; orders?: any[]; onCancel?: 
           </table>
         </div>
       ) : (
-        <div className="no-history" style={{ textAlign: 'center', color: '#fff', marginTop: '2rem' }}>
+        <div className="no-history">
           {!isAuth ? (
             <p>Connectez-vous pour voir votre historique de transactions.</p>
           ) : (
@@ -187,74 +270,6 @@ const HistoryTab: React.FC<{ history: Transaction[]; orders?: any[]; onCancel?: 
   );
 };
 
-// ...existing code...
-// ...existing code...
-const OrdersHistory: React.FC<{ ticker: string }> = ({ ticker }) => {
-  const [orders, setOrders] = useState<HistoryOrder[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    setLoading(true);
-    setError(null);
-    const token = localStorage.getItem('authToken');
-    fetch('/api/user/history', {
-      headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-    })
-      .then(res => res.json())
-      .then(data => {
-        // Filtrer par ticker côté client
-        const filtered = Array.isArray(data)
-          ? data.filter(order => order.ticker === ticker)
-          : [];
-        setOrders(filtered);
-        setLoading(false);
-      })
-      .catch(() => {
-        setError('Erreur chargement historique');
-        setLoading(false);
-      });
-  }, [ticker]);
-
-  return (
-    <section className="orderbook-history-container" aria-labelledby="orderbook-history-title">
-      <header className="orderbook-header">
-        <h2 id="orderbook-history-title" className="orderbook-title" style={{ color: '#f3f3f3' }}>Historique des ordres ({ticker})</h2>
-      </header>
-      {loading && <div style={{ color: '#f3f3f3' }}>Chargement...</div>}
-      {error && <div className="orderform-message orderform-error" style={{ color: '#ff6b6b' }}>{error}</div>}
-      {!loading && !error && (
-        <table className="orderbook-history-table" style={{ width: '100%', color: '#f3f3f3', background: 'transparent' }}>
-          <thead>
-            <tr style={{ color: '#f3f3f3', background: 'transparent' }}>
-              <th>Date</th>
-              <th>Type</th>
-              <th>Prix</th>
-              <th>Quantité</th>
-            </tr>
-          </thead>
-          <tbody>
-            {orders.length === 0 && (
-              <tr><td colSpan={4} style={{ textAlign: 'center', color: '#888' }}>Aucun ordre trouvé</td></tr>
-            )}
-            {orders.map(order => (
-              <tr key={order._id} style={{ color: '#f3f3f3', background: 'transparent' }}>
-                <td>{new Date(order.timestamp).toLocaleString('fr-FR')}</td>
-                <td>{order.type === 'buy' ? 'Achat' : 'Vente'}</td>
-                <td>{order.pricePerShare}</td>
-                <td>{order.quantity}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </section>
-  );
-};
-import OrderBook from '../components/OrderBook';
-import OrderForm from '../components/OrderForm';
-import AuthStatus from '../components/AuthStatus';
-
 interface HistoryOrder {
   _id: string;
   type: string;
@@ -263,8 +278,6 @@ interface HistoryOrder {
   status?: string;
   timestamp: string;
 }
-
-// ...existing code...
 
 const OrderBookPage: React.FC = () => {
   const { ticker: urlTicker } = useParams<{ ticker: string }>();
@@ -289,7 +302,6 @@ const OrderBookPage: React.FC = () => {
           if (!mounted) return;
           setUserHistory(Array.isArray(tradesData) ? tradesData : []);
         } else {
-          // not authenticated: don't show global transactions — keep history empty and prompt to login
           setUserHistory([]);
         }
 
@@ -327,7 +339,6 @@ const OrderBookPage: React.FC = () => {
     const token = localStorage.getItem('authToken');
     if (!token) return alert('Vous devez être connecté pour annuler un ordre');
 
-    // confirmation
     const ok = window.confirm('Confirmer l\'annulation de cet ordre ?');
     if (!ok) return;
     try {
@@ -368,42 +379,28 @@ const OrderBookPage: React.FC = () => {
   }, [urlTicker]);
 
   return (
-    <section
-      className="orderbook-menu-wrapper"
-        style={{
-          width: '90%',
-          maxWidth: '1400px',
-          margin: '2rem auto',
-          background: '#222',
-          borderRadius: '1.5rem',
-          boxShadow: '0 2px 16px rgba(0,0,0,0.12)',
-          padding: '2.5rem 2rem',
-          color: '#fff',
-          minHeight: '80vh',
-        }}
-    >
-      {/* AuthStatus removed as requested */}
-      <header className="orderbook-menu-header" style={{ marginBottom: '2rem', textAlign: 'center' }}>
-        <button className={`orderbook-menu-tab${view === 'form' ? ' active' : ''}`} onClick={() => setView('form')} style={{ marginRight: 12, background: view === 'form' ? '#222' : '#232323', color: '#222', border: 'none', borderRadius: 8, padding: '0.7rem 2rem', fontWeight: 600, cursor: 'pointer' }}>Formulaire</button>
-    <button className={`orderbook-menu-tab${view === 'orders' ? ' active' : ''}`} onClick={() => setView('orders')} style={{ marginRight: 12, background: view === 'orders' ? '#222' : '#232323', color: '#fff', border: 'none', borderRadius: 8, padding: '0.7rem 2rem', fontWeight: 600, cursor: 'pointer' }}>Carnet d'ordre</button>
-  <button className={`orderbook-menu-tab${view === 'history' ? ' active' : ''}`} onClick={() => setView('history')} style={{ background: view === 'history' ? '#222' : '#232323', color: '#fff', border: 'none', borderRadius: 8, padding: '0.7rem 2rem', fontWeight: 600, cursor: 'pointer' }}>Historique</button>
+    <section className="orderbook-page">
+      <header className="orderbook-menu-header">
+        <button className={`orderbook-menu-tab${view === 'form' ? ' active' : ''}`} onClick={() => setView('form')}>Formulaire</button>
+        <button className={`orderbook-menu-tab${view === 'orders' ? ' active' : ''}`} onClick={() => setView('orders')}>Carnet d'ordre</button>
+        <button className={`orderbook-menu-tab${view === 'history' ? ' active' : ''}`} onClick={() => setView('history')}>Historique</button>
       </header>
-      {/* Sélection d'action intégrée dans OrderForm */}
+
       <div className="orderbook-menu-content">
-  {notice && (
-    <div style={{ marginBottom: 12, textAlign: 'center' }}>
-      <div style={{ display: 'inline-block', padding: '0.5rem 1rem', borderRadius: 8, background: notice.type === 'success' ? '#2ecc71' : notice.type === 'error' ? '#ff6b6b' : '#f1c40f', color: '#fff' }}>{notice.text}</div>
-    </div>
-  )}
-  {view === 'form' && <OrderForm ticker={ticker} tickers={tickers} setTicker={setTicker} prefill={prefillOrder} />}
-  {view === 'orders' && <AllOrdersTable orders={allOrders.filter(o => o.status === 'open')} onSelectOrder={(order) => {
-    // set the selected ticker, prefill the form fields and open the form view
-    const selectedTicker = order.stock?.ticker || order.ticker;
-    if (selectedTicker) setTicker(selectedTicker);
-    setPrefillOrder({ type: order.type === 'buy' ? 'sell' : 'buy', price: order.price ?? order.pricePerShare, quantity: order.quantity });
-    setView('form');
-  }} />}
-  {view === 'history' && <HistoryTab history={userHistory} orders={myOrders} onCancel={handleCancelOrder} isAuth={!!localStorage.getItem('authToken')} />}
+        {notice && (
+          <div className="orderbook-notice">
+            <div className={`notice-chip notice-${notice.type}`}>{notice.text}</div>
+          </div>
+        )}
+
+        {view === 'form' && <OrderForm ticker={ticker} tickers={tickers} setTicker={setTicker} prefill={prefillOrder} />}
+        {view === 'orders' && <AllOrdersTable orders={allOrders.filter(o => o.status === 'open')} onSelectOrder={(order) => {
+          const selectedTicker = order.stock?.ticker || order.ticker;
+          if (selectedTicker) setTicker(selectedTicker);
+          setPrefillOrder({ type: order.type === 'buy' ? 'sell' : 'buy', price: order.price ?? order.pricePerShare, quantity: order.quantity });
+          setView('form');
+        }} />}
+        {view === 'history' && <HistoryTab history={userHistory} orders={myOrders} onCancel={handleCancelOrder} isAuth={!!localStorage.getItem('authToken')} />}
       </div>
     </section>
   );

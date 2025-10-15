@@ -103,11 +103,38 @@ async function createStocks() {
   }
 }
 
+async function ensureAdminPortfolioAndOrder(admin) {
+  const Portfolio = require('./models/Portfolio');
+  const Order = require('./models/Order');
+
+  const stocks = await Stock.find();
+  for (const stock of stocks) {
+    const qty = Number(stock.circulatingSupply || stock.maxSupply || 0);
+    if (qty <= 0) continue;
+
+    // create portfolio entry if not exists
+    const existingPort = await Portfolio.findOne({ user: admin._id, stock: stock._id });
+    if (!existingPort) {
+      await Portfolio.create({ user: admin._id, stock: stock._id, quantity: qty });
+      console.log(`Portfolio admin ajouté pour ${stock.ticker} qty=${qty}`);
+    }
+
+    // create admin sell order if not exists
+    const existingOrder = await Order.findOne({ user: admin._id, stock: stock._id, type: 'sell' });
+    if (!existingOrder) {
+      await Order.create({ user: admin._id, stock: stock._id, type: 'sell', price: stock.price, quantity: qty, quantityRemaining: qty, status: 'open' });
+      console.log(`Ordre de vente admin créé pour ${stock.ticker} qty=${qty}`);
+    }
+  }
+}
+
 async function main() {
   try {
     await connectDb();
     await createAdmin();
     await createStocks();
+    const admin = await User.findOne({ email: 'admin@worldstocks.local' });
+    if (admin) await ensureAdminPortfolioAndOrder(admin);
     console.log('Seed terminé.');
   } catch (err) {
     console.error('Erreur lors du seed :', err);

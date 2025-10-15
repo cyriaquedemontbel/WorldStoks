@@ -29,10 +29,38 @@ router.post('/', auth, async (req, res) => {
             price, 
             priceAtOpen: price, // prix d'ouverture initial
             change: 0,
-            changePercent: 0
+            changePercent: 0,
+            circulatingSupply: req.body.circulating_supply ?? req.body.circulatingSupply ?? stock?.circulatingSupply
         });
 
         await stock.save();
+
+        // If admin created the stock, give admin the circulating supply in portfolio and create a sell order
+        try {
+            const Order = require('../models/Order');
+            const Portfolio = require('../models/Portfolio');
+            const adminUser = req.user;
+            const qty = Number(stock.circulatingSupply || stock.maxSupply || 0);
+            if (adminUser && qty > 0) {
+                // Add to portfolio
+                await Portfolio.create({ user: adminUser._id, stock: stock._id, quantity: qty });
+
+                // Create admin sell order
+                const order = new Order({
+                    user: adminUser._id,
+                    stock: stock._id,
+                    type: 'sell',
+                    price: price,
+                    quantity: qty,
+                    quantityRemaining: qty,
+                    status: 'open'
+                });
+                await order.save();
+            }
+        } catch (e) {
+            console.warn('Erreur création ordre/admin portfolio:', e);
+        }
+
         res.json(stock);
     } catch (err) {
         console.error('Erreur création stock:', err);
