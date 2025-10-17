@@ -1,0 +1,5 @@
+git filter-repo --replace-text replace.txt --force# Ignore environment files
+.env
+.env.*
+backend/.env
+backend/.env.*

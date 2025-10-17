@@ -1,9 +1,0 @@
-{
-  "timestamp": "2025-10-15T18:16:15.184Z",
-  "totalSelectors": 66,
-  "unusedCount": 2,
-  "unused": [
-    "clickable",
-    "orderbook-menu-nav"
-  ]
-}
