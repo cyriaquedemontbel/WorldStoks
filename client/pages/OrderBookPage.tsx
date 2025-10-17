@@ -281,9 +281,9 @@ interface HistoryOrder {
 
 const OrderBookPage: React.FC = () => {
   const { ticker: urlTicker } = useParams<{ ticker: string }>();
-  const [view, setView] = useState<'form' | 'orders' | 'history'>('form');
+  const [view, setView] = useState<'form' | 'orders' | 'history'>('orders');
   const [tickers, setTickers] = useState<{ ticker: string; name: string }[]>([]);
-  const [ticker, setTicker] = useState<string>(urlTicker || 'APPL');
+  const [ticker, setTicker] = useState<string>(urlTicker || 'AAPL');
   const [userHistory, setUserHistory] = useState<any[]>([]);
   const [allOrders, setAllOrders] = useState<any[]>([]);
   const [myOrders, setMyOrders] = useState<any[]>([]);

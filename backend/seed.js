@@ -17,27 +17,32 @@ async function createAdmin() {
   const adminEmail = 'admin@worldstocks.local';
   const adminPassword = '123'; 
 
-  const existing = await User.findOne({ email: adminEmail });
-  if (existing) {
-    console.log(`Admin déjà existant (${adminEmail})`);
-    return existing;
+  let admin = await User.findOne({ email: adminEmail });
+  if (admin) {
+    // Force update des champs critiques
+    admin.isAdmin = true;
+    admin.password = adminPassword;
+    admin.cash = 100000;
+    admin.firstName = 'Admin';
+    admin.lastName = 'User';
+    admin.username = 'admin';
+    admin.birthDate = new Date('1990-01-01');
+    admin.consent = true;
+    await admin.save();
+    console.log(`Admin mis à jour (${adminEmail})`);
+    return admin;
   }
-
-  const admin = new User({
+  admin = new User({
     email: adminEmail,
     password: adminPassword,
     isAdmin: true,
-    cash: 100000
+    cash: 100000,
+    firstName: 'Admin',
+    lastName: 'User',
+    username: 'admin',
+    birthDate: new Date('1990-01-01'),
+    consent: true
   });
-
-  // Fill required profile fields to satisfy User schema validation
-  // These are minimal values for a seeded admin account.
-  admin.firstName = 'Admin';
-  admin.lastName = 'User';
-  admin.username = 'admin';
-  admin.birthDate = new Date('1990-01-01');
-  admin.consent = true;
-
   await admin.save();
   console.log(`Admin créé : ${adminEmail} / mot de passe : ${adminPassword}`);
   return admin;
@@ -46,7 +51,7 @@ async function createAdmin() {
 async function createStocks() {
   const stocksData = [
     {
-      ticker: 'APPL',
+      ticker: 'AAPL',
       name: 'Apple Corporation',
       price: 172.45,
       description: 'Tech giant making devices and services',
@@ -58,7 +63,7 @@ async function createStocks() {
       turnoverToday: 0
     },
     {
-      ticker: 'GOGL',
+      ticker: 'GOOG',
       name: 'Google Labs',
       price: 128.30,
       description: 'Search and cloud services',

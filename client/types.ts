@@ -62,7 +62,8 @@ export type Page =
   | 'funds'
   | 'admin'
   | 'settings'
-  | 'orderbook';
+  | 'orderbook'
+  | 'admin-orders';
 
 // ----------------- ORDER -----------------
 export interface Order {

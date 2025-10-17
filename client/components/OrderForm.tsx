@@ -74,7 +74,7 @@ const OrderForm: React.FC<Props> = ({ ticker, tickers, setTicker, prefill = null
         <div className="orderform-row">
           <label htmlFor="ticker">Action :</label>
           <select name="ticker" id="ticker" value={ticker} onChange={e => setTicker(e.target.value)} required>
-            {tickers.length === 0 && <option value="APPL">APPL</option>}
+            {tickers.length === 0 && <option value="AAPL">AAPL</option>}
             {tickers.map(t => (
               <option key={t.ticker} value={t.ticker}>{t.ticker} - {t.name}</option>
             ))}

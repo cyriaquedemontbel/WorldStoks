@@ -14,4 +14,15 @@ const stockSchema = new mongoose.Schema({
   turnoverToday: { type: Number, default: 0 },
 }, { timestamps: true });
 
+// Supprimer tous les ordres liés à ce stock quand il est supprimé
+stockSchema.pre('remove', async function(next) {
+  try {
+    const Order = require('./Order');
+    await Order.deleteMany({ stock: this._id });
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = mongoose.model('Stock', stockSchema);

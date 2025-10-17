@@ -23,13 +23,51 @@ router.post('/place', auth, async (req, res) => {
       session.endSession();
       return res.status(400).json({ message: 'Type d\'ordre invalide' });
     }
+    // Log tous les tickers existants pour debug
+    const allStocks = await Stock.find({}).session(session);
+    const allTickers = allStocks.map(s => s.ticker);
+    console.log('[ORDERS] Tickers existants:', allTickers, '| Ticker reçu:', ticker);
     // Recherche insensible à la casse
-    const stock = await Stock.findOne({ ticker: { $regex: `^${ticker}$`, $options: 'i' } }).session(session);
+    let stock = await Stock.findOne({ ticker: { $regex: `^${ticker}$`, $options: 'i' } }).session(session);
     if (!stock) {
-      console.error('[ORDERS] Stock non trouvé pour ticker reçu :', ticker);
-      await session.abortTransaction();
-      session.endSession();
-      return res.status(404).json({ message: `Stock non trouvé pour ticker : ${ticker}` });
+      // Correction automatique si faute de frappe (distance de Levenshtein <= 1)
+      function levenshtein(a, b) {
+        if (a.length === 0) return b.length;
+        if (b.length === 0) return a.length;
+        const matrix = [];
+        for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+        for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+        for (let i = 1; i <= b.length; i++) {
+          for (let j = 1; j <= a.length; j++) {
+            if (b.charAt(i - 1).toLowerCase() === a.charAt(j - 1).toLowerCase()) {
+              matrix[i][j] = matrix[i - 1][j - 1];
+            } else {
+              matrix[i][j] = Math.min(
+                matrix[i - 1][j - 1] + 1, // substitution
+                matrix[i][j - 1] + 1,     // insertion
+                matrix[i - 1][j] + 1      // deletion
+              );
+            }
+          }
+        }
+        return matrix[b.length][a.length];
+      }
+      let best = null, minDist = 99;
+      for (const t of allTickers) {
+        const dist = levenshtein(ticker, t);
+        if (dist < minDist) { minDist = dist; best = t; }
+      }
+      if (minDist <= 1) {
+        stock = await Stock.findOne({ ticker: best }).session(session);
+        console.warn(`[ORDERS] Correction automatique du ticker : ${ticker} => ${best}`);
+      }
+      if (!stock) {
+        await session.abortTransaction();
+        session.endSession();
+        let suggestion = '';
+        if (minDist <= 2 && best) suggestion = ` (voulez-vous dire : ${best} ?)`;
+        return res.status(404).json({ message: `Stock non trouvé pour ticker : ${ticker}${suggestion}` });
+      }
     }
 
     // Re-fetch request user inside session to ensure consistent writes
@@ -218,8 +256,14 @@ router.delete('/:id', auth, async (req, res) => {
     if (!req.user.isAdmin && String(order.user) !== String(req.user._id)) {
       return res.status(403).json({ message: 'Accès refusé' });
     }
-    await order.deleteOne();
-    res.json({ success: true, message: 'Ordre supprimé' });
+    // Si l'utilisateur est admin, supprimer tous ses ordres ouverts sur ce stock
+    if (req.user.isAdmin) {
+      const result = await Order.deleteMany({ user: req.user._id, stock: order.stock, status: 'open' });
+      res.json({ success: true, message: `Tous les ordres ouverts de l'admin pour ce stock supprimés (${result.deletedCount})` });
+    } else {
+      await order.deleteOne();
+      res.json({ success: true, message: 'Ordre supprimé' });
+    }
   } catch (err) {
     console.error('Erreur suppression ordre:', err);
     res.status(500).json({ message: "Impossible de supprimer l'ordre" });

@@ -5,26 +5,25 @@ const AdminOrdersPage: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
 
-  const fetchOrders = () => {
+  const fetchOrders = async () => {
     setLoading(true);
     setError(null);
-    fetch('/api/orders/admin', {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('authToken')}`,
-      },
-    })
-      .then(res => {
-        if (!res.ok) throw new Error('Erreur chargement ordres');
-        return res.json();
-      })
-      .then(data => {
-        setOrders(data.orders || []);
-      })
-      .catch(err => {
-        setError(err.message);
-      })
-      .finally(() => setLoading(false));
+    try {
+      const res = await fetch('/api/orders/admin', {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('authToken')}`,
+        },
+      });
+      if (!res.ok) throw new Error('Erreur chargement ordres');
+      const data = await res.json();
+      setOrders(data.orders || []);
+    } catch (err: any) {
+      setError(err.message || String(err));
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -53,6 +52,7 @@ const AdminOrdersPage: React.FC = () => {
 
   return (
     <div style={{ padding: '2rem' }}>
+      
       <h2>Ordres d'actions de l'admin</h2>
       {loading && <div>Chargement...</div>}
       {error && <div style={{ color: 'red' }}>{error}</div>}
