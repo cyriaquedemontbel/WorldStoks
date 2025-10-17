@@ -42,6 +42,17 @@ const OrderBook: React.FC<Props> = ({ ticker }) => {
   if (error) return <div>{error}</div>;
   if (!orderBook) return <div>Aucun ordre pour cette action.</div>;
 
+  // Trie les ventes pour mettre celles de l'admin en haut
+  const sortedAsks = Array.isArray(orderBook.asks)
+    ? [...orderBook.asks].sort((a, b) => {
+        const aAdmin = a.user && typeof a.user === 'object' && a.user.isAdmin;
+        const bAdmin = b.user && typeof b.user === 'object' && b.user.isAdmin;
+        if (aAdmin && !bAdmin) return -1;
+        if (!aAdmin && bAdmin) return 1;
+        return 0;
+      })
+    : [];
+
   return (
     <section className="orderbook-container" aria-labelledby="orderbook-title">
       <header className="orderbook-header">
@@ -77,7 +88,7 @@ const OrderBook: React.FC<Props> = ({ ticker }) => {
               </tr>
             </thead>
             <tbody>
-              {Array.isArray(orderBook.asks) && orderBook.asks.map(order => (
+              {sortedAsks.map(order => (
                 <tr key={order._id}>
                   <td>{order.price}</td>
                   <td>{order.quantityRemaining}</td>

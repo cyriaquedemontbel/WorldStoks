@@ -9,31 +9,57 @@ const User = require('../models/User');
 
 // Placer un ordre d'achat ou de vente
 router.post('/place', auth, async (req, res) => {
+  const session = await Order.startSession();
   try {
+    session.startTransaction();
     const { ticker, type, price, quantity } = req.body;
     if (!ticker || !type || !price || !quantity) {
+      await session.abortTransaction();
+      session.endSession();
       return res.status(400).json({ message: 'Paramètres manquants' });
     }
     if (!['buy', 'sell'].includes(type)) {
+      await session.abortTransaction();
+      session.endSession();
       return res.status(400).json({ message: 'Type d\'ordre invalide' });
     }
-    const stock = await Stock.findOne({ ticker });
-    if (!stock) return res.status(404).json({ message: 'Stock non trouvé' });
+    // Recherche insensible à la casse
+    const stock = await Stock.findOne({ ticker: { $regex: `^${ticker}$`, $options: 'i' } }).session(session);
+    if (!stock) {
+      console.error('[ORDERS] Stock non trouvé pour ticker reçu :', ticker);
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ message: `Stock non trouvé pour ticker : ${ticker}` });
+    }
+
+    // Re-fetch request user inside session to ensure consistent writes
+    const reqUser = await User.findById(req.user._id).session(session);
 
     // Vérification des fonds ou des actions disponibles
-    if (type === 'buy' && req.user.cash < price * quantity) {
+    if (type === 'buy' && reqUser.cash < price * quantity) {
+      await session.abortTransaction();
+      session.endSession();
       return res.status(400).json({ message: 'Fonds insuffisants' });
     }
     if (type === 'sell') {
-      const portfolio = await Portfolio.findOne({ user: req.user._id, stock: stock._id });
-      if (!portfolio || portfolio.quantity < quantity) {
-        return res.status(400).json({ message: 'Pas assez d\'actions à vendre' });
+      const portfolio = await Portfolio.findOne({ user: reqUser._id, stock: stock._id }).session(session);
+      if (!portfolio) {
+        console.error(`[ORDERS] Aucun portefeuille trouvé pour user=${reqUser._id} et stock=${stock._id} (ticker=${ticker})`);
+        await session.abortTransaction();
+        session.endSession();
+        return res.status(400).json({ message: `Vous ne possédez aucune action ${stock.ticker}` });
+      }
+      if (portfolio.quantity < quantity) {
+        console.error(`[ORDERS] Quantité insuffisante pour user=${reqUser._id} sur stock=${stock._id} (ticker=${ticker}), demandé=${quantity}, dispo=${portfolio.quantity}`);
+        await session.abortTransaction();
+        session.endSession();
+        return res.status(400).json({ message: `Pas assez d'actions à vendre (${portfolio.quantity} dispo)` });
       }
     }
 
-    // Création de l'ordre
+    // Création de l'ordre (doit être créé within session)
     let order = new Order({
-      user: req.user._id,
+      user: reqUser._id,
       stock: stock._id,
       type,
       price,
@@ -41,77 +67,66 @@ router.post('/place', auth, async (req, res) => {
       quantityRemaining: quantity,
       status: 'open',
     });
-    await order.save();
+    await order.save({ session });
 
     // Matching automatique
     let matchedOrders = [];
     let qtyToMatch = order.quantityRemaining;
     if (type === 'buy') {
-      // Cherche les ordres de vente ouverts au prix <= order.price
-      // Exclure les ordres appartenant à l'utilisateur qui place l'ordre
       matchedOrders = await Order.find({
         stock: stock._id,
         type: 'sell',
         price: { $lte: price },
         status: 'open',
-        user: { $ne: req.user._id }
-      }).sort({ price: 1, timestamp: 1 }).populate('user');
+        user: { $ne: reqUser._id }
+      }).session(session).sort({ price: 1, timestamp: 1 }).populate('user');
     } else {
-      // Cherche les ordres d'achat ouverts au prix >= order.price
-      // Exclure les ordres appartenant à l'utilisateur qui place l'ordre
       matchedOrders = await Order.find({
         stock: stock._id,
         type: 'buy',
         price: { $gte: price },
         status: 'open',
-        user: { $ne: req.user._id }
-      }).sort({ price: -1, timestamp: 1 }).populate('user');
+        user: { $ne: reqUser._id }
+      }).session(session).sort({ price: -1, timestamp: 1 }).populate('user');
     }
 
     for (const match of matchedOrders) {
-      // Défensive: si un ordre appartient au même utilisateur (au cas où), on l'ignore
-      if (String(match.user?._id || match.user) === String(req.user._id)) continue;
+      if (String(match.user?._id || match.user) === String(reqUser._id)) continue;
       if (qtyToMatch <= 0) break;
       const matchQty = Math.min(qtyToMatch, match.quantityRemaining);
       const transactionPrice = match.price;
 
-      // Mise à jour des portefeuilles et cash
+      // Determine buyer and seller documents within session
       let buyer, seller;
       if (type === 'buy') {
-        buyer = req.user;
-        // match.user is populated above; if not, fetch it
-        seller = match.user && match.user._id ? match.user : await (async () => {
-          try { return await User.findById(match.user); } catch { return null; }
-        })();
+        buyer = await User.findById(reqUser._id).session(session);
+        seller = match.user && match.user._id ? await User.findById(match.user._id).session(session) : await User.findById(match.user).session(session);
       } else {
-        buyer = match.user && match.user._id ? match.user : await (async () => {
-          try { return await User.findById(match.user); } catch { return null; }
-        })();
-        seller = req.user;
+        buyer = match.user && match.user._id ? await User.findById(match.user._id).session(session) : await User.findById(match.user).session(session);
+        seller = await User.findById(reqUser._id).session(session);
       }
 
       // Mise à jour du portefeuille acheteur
-      let buyerPortfolio = await Portfolio.findOne({ user: buyer._id, stock: stock._id });
+      let buyerPortfolio = await Portfolio.findOne({ user: buyer._id, stock: stock._id }).session(session);
       if (!buyerPortfolio) buyerPortfolio = new Portfolio({ user: buyer._id, stock: stock._id, quantity: matchQty });
       else buyerPortfolio.quantity += matchQty;
-      await buyerPortfolio.save();
+      await buyerPortfolio.save({ session });
 
       // Mise à jour du portefeuille vendeur
-      let sellerPortfolio = await Portfolio.findOne({ user: seller._id, stock: stock._id });
+      let sellerPortfolio = await Portfolio.findOne({ user: seller._id, stock: stock._id }).session(session);
       if (sellerPortfolio) {
         sellerPortfolio.quantity -= matchQty;
-        if (sellerPortfolio.quantity <= 0) await sellerPortfolio.deleteOne();
-        else await sellerPortfolio.save();
+        if (sellerPortfolio.quantity <= 0) await sellerPortfolio.deleteOne({ session });
+        else await sellerPortfolio.save({ session });
       }
 
       // Mise à jour des cash
       buyer.cash -= transactionPrice * matchQty;
       seller.cash += transactionPrice * matchQty;
-      await buyer.save();
-      await seller.save();
+      await buyer.save({ session });
+      await seller.save({ session });
 
       // Création de la transaction
-      // Créer une transaction pour l'acheteur et une pour le vendeur afin que les deux voient l'opération
       const buyerTransaction = new Transaction({
         user: buyer._id,
         stock: stock._id,
@@ -134,28 +149,40 @@ router.post('/place', auth, async (req, res) => {
         totalValue: transactionPrice * matchQty,
         timestamp: new Date(),
       });
-      await Promise.all([buyerTransaction.save(), sellerTransaction.save()]);
+      await Promise.all([buyerTransaction.save({ session }), sellerTransaction.save({ session })]);
 
       // Mise à jour du prix de l'action
       stock.price = transactionPrice;
-      await stock.save();
+      await stock.save({ session });
 
       // Mise à jour des ordres
       match.quantityRemaining -= matchQty;
       if (match.quantityRemaining <= 0) match.status = 'matched';
-      await match.save();
+      await match.save({ session });
 
       qtyToMatch -= matchQty;
     }
 
     order.quantityRemaining = qtyToMatch;
     if (qtyToMatch <= 0) order.status = 'matched';
-    await order.save();
+    await order.save({ session });
+
+    await session.commitTransaction();
+    session.endSession();
 
     res.json({ success: true, order });
   } catch (err) {
-    console.error('Erreur placement ordre:', err);
-    res.status(500).json({ message: 'Impossible de placer l\'ordre' });
+    try { await session.abortTransaction(); } catch (e) { /* ignore */ }
+    session.endSession();
+    // Log full error for debugging
+    console.error('Erreur placement ordre:', err && err.stack ? err.stack : err);
+    const isProd = process.env.NODE_ENV === 'production';
+    // In development, include the error message to help debug. In prod, keep generic.
+    if (!isProd) {
+      res.status(500).json({ message: 'Impossible de placer l\'ordre', detail: err && err.message ? err.message : String(err) });
+    } else {
+      res.status(500).json({ message: 'Impossible de placer l\'ordre' });
+    }
   }
 });
 

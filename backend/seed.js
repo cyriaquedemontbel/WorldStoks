@@ -30,6 +30,14 @@ async function createAdmin() {
     cash: 100000
   });
 
+  // Fill required profile fields to satisfy User schema validation
+  // These are minimal values for a seeded admin account.
+  admin.firstName = 'Admin';
+  admin.lastName = 'User';
+  admin.username = 'admin';
+  admin.birthDate = new Date('1990-01-01');
+  admin.consent = true;
+
   await admin.save();
   console.log(`Admin créé : ${adminEmail} / mot de passe : ${adminPassword}`);
   return admin;

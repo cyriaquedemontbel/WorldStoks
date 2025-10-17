@@ -14,12 +14,14 @@ router.get('/book/:ticker', async (req, res) => {
       return res.json({ bids: [], asks: [] });
     }
 
-    // Ordres d'achat (bids) triés du plus élevé au plus bas
+    // Ordres d'achat (bids) triés du plus élevé au plus bas, avec user peuplé
     const bids = await Order.find({ stock: stock._id, type: 'buy', status: 'open' })
-      .sort({ price: -1, timestamp: 1 });
-    // Ordres de vente (asks) triés du plus bas au plus élevé
+      .sort({ price: -1, timestamp: 1 })
+      .populate('user', 'username email isAdmin');
+    // Ordres de vente (asks) triés du plus bas au plus élevé, avec user peuplé
     const asks = await Order.find({ stock: stock._id, type: 'sell', status: 'open' })
-      .sort({ price: 1, timestamp: 1 });
+      .sort({ price: 1, timestamp: 1 })
+      .populate('user', 'username email isAdmin');
 
     res.json({ bids, asks });
   } catch (err) {
